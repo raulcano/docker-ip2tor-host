@@ -1,0 +1,23 @@
+version: '3'
+services:
+
+  host:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile
+    container_name: ip2tor-host
+    hostname: host
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      CONTAINER_ROLE: "host"
+    networks:
+      - hostnet
+
+networks:
+    hostnet:
+        driver: bridge

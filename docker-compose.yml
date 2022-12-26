@@ -7,12 +7,16 @@ services:
       dockerfile: .docker/Dockerfile
     container_name: ip2tor-host
     hostname: host
+    volumes:
+      - .:/home/ip2tor
     deploy:
       restart_policy:
         condition: on-failure
         delay: 5s
         max_attempts: 3
         window: 120s
+    # ports:
+    #   - 9050:9050
     environment:
       CONTAINER_ROLE: "host"
     networks:

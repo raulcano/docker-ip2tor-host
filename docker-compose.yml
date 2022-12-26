@@ -1,7 +1,7 @@
 version: '3'
 services:
 
-  host:
+  ip2tor-host:
     build:
       context: .
       dockerfile: .docker/Dockerfile

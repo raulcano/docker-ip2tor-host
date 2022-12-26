@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: .docker/Dockerfile
     container_name: ip2tor-host
-    hostname: host
+    hostname: ip2tor-host
     volumes:
       - .:/home/ip2tor
     deploy:
@@ -15,10 +15,6 @@ services:
         delay: 5s
         max_attempts: 3
         window: 120s
-    # ports:
-    #   - 9050:9050
-    environment:
-      CONTAINER_ROLE: "host"
     networks:
       - hostnet
 

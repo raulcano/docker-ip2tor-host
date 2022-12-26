@@ -26,8 +26,6 @@ RUN sudo install -m 0644 -o root -g root -t /etc/logrotate.d/ /tmp/ip2tor/contri
 
 COPY .env /etc/ip2tor.conf
 
-COPY scripts/prepare_crontab.sh /usr/local/bin/prepare_crontab
-RUN chmod u+x /usr/local/bin/prepare_crontab
-RUN /usr/local/bin/prepare_crontab
-
-CMD /usr/local/bin/ip2tor_host.sh loop
+COPY scripts/start.sh /usr/local/bin/start
+RUN chmod u+x /usr/local/bin/start
+CMD ["/usr/local/bin/start"]

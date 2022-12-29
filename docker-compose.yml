@@ -15,9 +15,10 @@ services:
         delay: 5s
         max_attempts: 3
         window: 120s
+    ports:
+      - "21212-21221:21212-21221"
     networks:
       - hostnet
-
 networks:
     hostnet:
         driver: bridge

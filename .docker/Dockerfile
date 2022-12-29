@@ -7,6 +7,7 @@ RUN apt-get install -y socat
 RUN apt-get install -y jq
 RUN apt-get install -y git
 RUN apt-get install -y curl
+RUN apt-get install -y supervisor
 
 RUN useradd ip2tor --comment "IP2Tor Host Account" --create-home --home /home/ip2tor --shell /bin/bash
 RUN chmod 750 /home/ip2tor
@@ -18,6 +19,7 @@ RUN mkdir /tmp/ip2tor/contrib
 COPY scripts/ip2tor_host.sh /tmp/ip2tor/scripts/ip2tor_host.sh
 COPY scripts/ip2torc.sh /tmp/ip2tor/scripts/ip2torc.sh
 COPY contrib/ip2tor /tmp/ip2tor/contrib/ip2tor
+COPY contrib/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN sudo install -m 0755 -o root -g root -t /usr/local/bin /tmp/ip2tor/scripts/ip2tor_host.sh
 RUN sudo install -m 0755 -o root -g root -t /usr/local/bin /tmp/ip2tor/scripts/ip2torc.sh

@@ -5,9 +5,13 @@ RUN apt-get install -y sudo
 RUN apt-get install -y tor
 RUN apt-get install -y socat
 RUN apt-get install -y jq
-RUN apt-get install -y git
 RUN apt-get install -y curl
 RUN apt-get install -y supervisor
+RUN apt-get install -y procps
+RUN apt-get install -y lsof
+RUN apt-get install -y nano
+
+
 
 RUN useradd ip2tor --comment "IP2Tor Host Account" --create-home --home /home/ip2tor --shell /bin/bash
 RUN chmod 750 /home/ip2tor
@@ -18,15 +22,14 @@ RUN mkdir /tmp/ip2tor/contrib
 
 COPY scripts/ip2tor_host.sh /tmp/ip2tor/scripts/ip2tor_host.sh
 COPY scripts/ip2torc.sh /tmp/ip2tor/scripts/ip2torc.sh
-COPY contrib/ip2tor /tmp/ip2tor/contrib/ip2tor
-COPY contrib/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN sudo install -m 0755 -o root -g root -t /usr/local/bin /tmp/ip2tor/scripts/ip2tor_host.sh
 RUN sudo install -m 0755 -o root -g root -t /usr/local/bin /tmp/ip2tor/scripts/ip2torc.sh
-# To make sure that logs are rotated and deleted add the logrotate config - IS THIS NECESSARY? WE ARE NOT RUNNING ANYTHING AS SERVICE
-RUN sudo install -m 0644 -o root -g root -t /etc/logrotate.d/ /tmp/ip2tor/contrib/ip2tor
 
 COPY .env /etc/ip2tor.conf
+
+# We add the correct folder for tor data, so the debian-tor user has access to it
+RUN echo "DataDirectory /var/lib/tor" | sudo tee --append /etc/tor/torrc
 
 COPY scripts/start.sh /usr/local/bin/start
 RUN chmod u+x /usr/local/bin/start

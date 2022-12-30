@@ -48,13 +48,11 @@ function add_bridge() {
   # requires sudo
   port=${1}
   target=${2}
-  
   echo "adding bridge from port: ${port} to: ${target}"
-  
-  program_name="ip2tor_bridge_${port}"
-  file_path="/home/ip2tor/tor_bridges/${program_name}.conf"
+
+  file_path="/etc/systemd/system/ip2tor_${port}.service"
   if [ -f "${file_path}" ]; then
-    debug "Bridge exists already: we found the file ${file_path}"
+    debug "file exists already"
     exit 0
   fi
 
@@ -67,14 +65,22 @@ function add_bridge() {
   fi
 
   cat <<EOF | sudo tee "${file_path}" >/dev/null
-[program:${program_name}]
-; IP2Tor Tunnel Service (Port ${port})
-command=/usr/bin/socat TCP4-LISTEN:${port},bind=0.0.0.0,reuseaddr,fork SOCKS4A:localhost:${target},socksport=9050
-user=${service_user}
+[Unit]
+Description=IP2Tor Tunnel Service (Port ${port})
+After=network.target
+
+[Service]
+User=${service_user}
+Group=${service_user}
+ExecStart=/usr/bin/socat TCP4-LISTEN:${port},bind=0.0.0.0,reuseaddr,fork SOCKS4A:localhost:${target},socksport=9050
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
-  echo "Update supervisor after adding the service 'ip2tor_${port}'. File created: /etc/supervisor/conf.d/ip2tor_${port}.conf"
-  supervisorctl update
+  sudo systemctl enable ip2tor_"${port}"
+  sudo systemctl start ip2tor_"${port}"
 
 }
 
@@ -105,19 +111,19 @@ function remove_bridge() {
   port=${1}
   echo "removing bridge from port: ${port}"
 
-  program_name="ip2tor_bridge_${port}"
-  file_path="/home/ip2tor/tor_bridges/${program_name}.conf"
-
+  file_path="/etc/systemd/system/ip2tor_${port}.service"
   if ! [ -f "${file_path}" ]; then
     echo "file does not exist"
     echo "no bridge on this port..!"
     exit 1
   fi
 
-  echo "will now update supervisord, so the bridge is properly removed"
-  sudo rm -f ${file_path}
-  supervisorctl update
-
+  echo "will now stop, disable and remove service and then refresh systemd"
+  sudo systemctl stop ip2tor_"${port}"
+  sudo systemctl disable ip2tor_"${port}"
+  sudo rm -rf "${file_path}"
+  sudo systemctl daemon-reload
+  sudo systemctl reset-failed ip2tor_"${port}"
   echo "successfully stopped and removed bridge."
 
 }

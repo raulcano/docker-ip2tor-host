@@ -21,29 +21,14 @@
 ################
 # service cron start
 
-source /home/ip2tor/.env
 
 ################
 # Run supervisor
 ################
+source /home/ip2tor/.env
 supervisord -c /home/ip2tor/contrib/supervisord.conf
 echo 'Starting Tor ...'
 echo "Starting ip2tor_host.sh loop (DEBUG_LOG=$DEBUG_LOG)..."
 echo 'To check if Tor and the IP2TOR_HOST are running alright, open a terminal in this container and run "supervisorctl status".'
 
-supervisorctl tail -f ip2tor_host
-
-
-################
-# Run Tor
-################
-# service tor start
-
-################
-# Run the host script in a loop
-################
-
-
-# Set the DEBUG_LOG value to 0 or 1 in the .env file
-# If DEBUG_LOG is 1, docker will show the debug logs in screen
-# DEBUG_LOG=$DEBUG_LOG /usr/local/bin/ip2tor_host.sh loop
+tail -f /home/ip2tor/logs/supervisor/*

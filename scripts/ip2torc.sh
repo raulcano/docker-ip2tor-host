@@ -70,10 +70,12 @@ function add_bridge() {
 [program:${program_name}]
 ; IP2Tor Tunnel Service (Port ${port})
 command=/usr/bin/socat TCP4-LISTEN:${port},bind=0.0.0.0,reuseaddr,fork SOCKS4A:localhost:${target},socksport=9050
+stdout_logfile=/home/ip2tor/logs/supervisor/${program_name}-stdout.log
+stderr_logfile=/home/ip2tor/logs/supervisor/${program_name}-stderr.log
 user=${service_user}
 EOF
 
-  echo "Update supervisor after adding the service 'ip2tor_${port}'. File created: /etc/supervisor/conf.d/ip2tor_${port}.conf"
+  echo "Update supervisor after adding the service 'ip2tor_${port}'. File created: /home/ip2tor/tor_bridges/ip2tor_${port}.conf"
   supervisorctl update
 
 }
@@ -118,6 +120,11 @@ function remove_bridge() {
   sudo rm -f ${file_path}
   supervisorctl update
 
+  CURRENTDATE=`date +"%Y-%m-%d_%T"`
+
+  echo "The bridge logs were moved to the folder 'deleted_bridges'"
+  sudo mv /home/ip2tor/logs/supervisor/${program_name}-stderr.log /home/ip2tor/logs/supervisor/deleted_bridges/${CURRENTDATE}-${program_name}-stderr.log
+  sudo mv /home/ip2tor/logs/supervisor/${program_name}-stdout.log /home/ip2tor/logs/supervisor/deleted_bridges/${CURRENTDATE}-${program_name}-stdout.log
   echo "successfully stopped and removed bridge."
 
 }

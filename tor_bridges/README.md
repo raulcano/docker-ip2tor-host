@@ -1,2 +1,2 @@
 This folder contains a supervisor .conf file for each bridge that is active.
-When a particular bridge is suspended, its corresponding file is deleted.
+When a particular bridge is suspended, its corresponding conf file is deleted and the log files (stderr and stdout) moved to the "logs/deleted_bridges" folder

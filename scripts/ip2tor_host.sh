@@ -29,6 +29,7 @@ if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "--help" ];
   echo "ip2tor_host.sh list [I|P|A|S|H|Z|D|F]"
   echo "ip2tor_host.sh loop"
   echo "ip2tor_host.sh suspend"
+  echo "ip2tor_host.sh clean"
   exit 1
 fi
 
@@ -222,7 +223,8 @@ elif [ "$1" = "loop" ]; then
     "${0}" activate
     "${0}" suspend
     "${0}" hello
-    sleep 2
+    "${0}" clean
+    sleep 30
   done
 
 #################
@@ -274,6 +276,52 @@ elif [ "$1" = "suspend" ]; then
     fi
 
   done
+
+###############################
+# DELETE_NON_EXISTING_BRIDGES #
+###############################
+# This will check the existing bridges loaded in supervisord, against the ones active in the Shop
+# If there are bridges running in supervisord, but they are not present in the Shop, we delete them
+elif [ "$1" = "clean" ]; then
+  echo "Removing bridges from the system that do not exist in the Shop..."
+  get_tor_bridges "A"  # (A for active bridges) - sets ${res}
+  
+  
+  detail=$(echo "${res}" | jq -c '.detail' &>/dev/null || true)
+  if [ -n "${detail}" ]; then
+    echo "${detail}"
+    exit 1
+  fi
+
+  jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.target | tostring')
+  active_list=$(echo "${jsn}" | xargs -L3 | sed 's/ /|/g' | paste -sd "\n" -)
+
+  echo "List of active bridges in Shop:"
+  echo "${active_list}"
+  echo "---"
+  
+  # create a list with all the conf file names corresponding to the active bridges
+  existing_bridges_in_shop=""
+  for item in ${active_list}; do
+    port=$(echo "${item}" | cut -d'|' -f2)
+    existing_bridges_in_shop="ip2tor_bridge_${port}.conf ${existing_bridges_in_shop}"
+  done
+
+  # For each .conf file (supervisord programs)
+  # we check that if corresponds to one entry of the active bridges retrieved from the shop
+  bridges_dir="/home/ip2tor/tor_bridges/"
+  for bridge_file_path in "${bridges_dir}"*.conf; do
+    bridge_file=$(basename ${bridge_file_path})
+
+    if ! grep -q "${bridge_file}" <<< "${existing_bridges_in_shop}"; then
+      port=${bridge_file//[^0-9]/} # this extracts the numbers from the filename
+      port=${port:1} #removes the first number, which is the 2 in "ip2tor"
+      echo "The bridge in port ${port} does not exists in the Shop. Removing ..."
+      DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" remove "${port}"
+    fi
+  done
+
+  
 
 else
   echo "unknown command - run with -h for help"

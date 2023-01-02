@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: .docker/Dockerfile
     container_name: ip2tor-host
+    environment:
+      CONTAINER_ROLE: "ip2tor-host"
     hostname: ip2tor-host
     volumes:
       - .:/home/ip2tor
@@ -19,6 +21,7 @@ services:
       - "21212-21221:21212-21221"
     networks:
       - hostnet
+ 
 networks:
     hostnet:
         driver: bridge

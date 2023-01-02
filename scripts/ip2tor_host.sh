@@ -29,7 +29,7 @@ if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "--help" ];
   echo "ip2tor_host.sh list [I|P|A|S|H|Z|D|F]"
   echo "ip2tor_host.sh loop"
   echo "ip2tor_host.sh suspend"
-  echo "ip2tor_host.sh clean"
+  echo "ip2tor_host.sh sync"
   exit 1
 fi
 
@@ -223,8 +223,7 @@ elif [ "$1" = "loop" ]; then
     "${0}" activate
     "${0}" suspend
     "${0}" hello
-    "${0}" clean
-    sleep 30
+    sleep 3
   done
 
 #################
@@ -278,14 +277,14 @@ elif [ "$1" = "suspend" ]; then
   done
 
 ###############################
-# DELETE_NON_EXISTING_BRIDGES #
+# SYNC_BRIDGES #
 ###############################
-# This will check the existing bridges loaded in supervisord, against the ones active in the Shop
+# This will check the existing bridges loaded in supervisord, against the ones active in the Shop:
 # If there are bridges running in supervisord, but they are not present in the Shop, we delete them
-elif [ "$1" = "clean" ]; then
-  echo "Removing bridges from the system that do not exist in the Shop..."
+# If there are active bridges in the Shop that do not have a conf file for supervisor, we create them
+elif [ "$1" = "sync" ]; then
+  echo "Synchronizing active bridges between the Shop and the Host ..."
   get_tor_bridges "A"  # (A for active bridges) - sets ${res}
-  
   
   detail=$(echo "${res}" | jq -c '.detail' &>/dev/null || true)
   if [ -n "${detail}" ]; then
@@ -300,16 +299,25 @@ elif [ "$1" = "clean" ]; then
   echo "${active_list}"
   echo "---"
   
+  bridges_dir="/home/ip2tor/tor_bridges/"
   # create a list with all the conf file names corresponding to the active bridges
   existing_bridges_in_shop=""
   for item in ${active_list}; do
     port=$(echo "${item}" | cut -d'|' -f2)
-    existing_bridges_in_shop="ip2tor_bridge_${port}.conf ${existing_bridges_in_shop}"
+    target=$(echo "${item}" | cut -d'|' -f3)
+    bridge_file="ip2tor_bridge_${port}.conf"
+    bridge_file_path="${bridges_dir}${bridge_file}"
+    existing_bridges_in_shop="${bridge_file} ${existing_bridges_in_shop}"
+
+    # if this bridge does not exist in host, then we create it
+    if [ ! -f "${bridge_file_path}" ]; then
+      echo "The bridge in port ${port} does not exists in the Host. Creating ..."
+      DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" add "${port}" "${target}" 
+    fi
   done
 
-  # For each .conf file (supervisord programs)
+  # For each .conf file (supervisord programs, one per bridge)
   # we check that if corresponds to one entry of the active bridges retrieved from the shop
-  bridges_dir="/home/ip2tor/tor_bridges/"
   for bridge_file_path in "${bridges_dir}"*.conf; do
     bridge_file=$(basename ${bridge_file_path})
 

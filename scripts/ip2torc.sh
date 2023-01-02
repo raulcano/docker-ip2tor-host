@@ -113,18 +113,32 @@ function remove_bridge() {
   if ! [ -f "${file_path}" ]; then
     echo "file does not exist"
     echo "no bridge on this port..!"
-    exit 1
+    
+    # If we exit with 1, the loop will still keep calling the API, notice that a bridge is suspended and do nothing in the host, nor update the bridge via API
+    # So it will call the API again and again.
+    # This way, the bridge is set to H and no endless calls to the API are done.
+    # exit 1
+    # exit 0
+  else 
+    echo "will now update supervisord, so the bridge is properly removed"
+    sudo rm -f ${file_path}
+    supervisorctl update
   fi
 
-  echo "will now update supervisord, so the bridge is properly removed"
-  sudo rm -f ${file_path}
-  supervisorctl update
-
+  log_file="/home/ip2tor/logs/supervisor/${program_name}-stdout.log"
+  err_file="/home/ip2tor/logs/supervisor/${program_name}-stderr.log"
   CURRENTDATE=`date +"%Y-%m-%d_%T"`
+  
+  if [ -f "${err_file}" ]; then
+    echo "The bridge error logs were moved to the folder 'deleted_bridges'"
+    sudo mv ${err_file} /home/ip2tor/logs/supervisor/deleted_bridges/${CURRENTDATE}-${program_name}-stderr.log
+  fi
 
-  echo "The bridge logs were moved to the folder 'deleted_bridges'"
-  sudo mv /home/ip2tor/logs/supervisor/${program_name}-stderr.log /home/ip2tor/logs/supervisor/deleted_bridges/${CURRENTDATE}-${program_name}-stderr.log
-  sudo mv /home/ip2tor/logs/supervisor/${program_name}-stdout.log /home/ip2tor/logs/supervisor/deleted_bridges/${CURRENTDATE}-${program_name}-stdout.log
+  if [ -f "${log_file}" ]; then
+    echo "The bridge error logs were moved to the folder 'deleted_bridges'"
+    sudo mv ${log_file} /home/ip2tor/logs/supervisor/deleted_bridges/${CURRENTDATE}-${program_name}-stdout.log
+  fi
+  
   echo "successfully stopped and removed bridge."
 
 }

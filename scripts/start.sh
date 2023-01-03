@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ################
-# IMPORTANT: The ip2tor_host.sh loop running in the foreground is sending a 'hello' every 2 seconds
+# IMPORTANT: The ip2tor_host.sh loop is sending a 'hello' every 2 seconds
 # For the moment, I see no need to have the crontab running to check in
 ################
 

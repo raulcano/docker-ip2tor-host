@@ -17,6 +17,7 @@ if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "--help" ];
   echo "ip2torc.sh check [TARGET]"
   echo "ip2torc.sh list"
   echo "ip2torc.sh remove [PORT]"
+  echo "ip2torc.sh sync"
   exit 1
 fi
 

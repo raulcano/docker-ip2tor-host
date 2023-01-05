@@ -306,11 +306,11 @@ elif [ "$1" = "sync" ]; then
 
     jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.target | tostring')
     active_list=$(echo "${jsn}" | xargs -L3 | sed 's/ /|/g' | paste -sd "\n" -)
-
+    
     echo "List of active bridges in Shop:"
     echo "${active_list}"
     echo "---"
-    
+
     bridges_dir="/home/ip2tor/tor_bridges/"
     # create a list with all the conf file names corresponding to the active bridges
     existing_bridges_in_shop=""
@@ -332,12 +332,13 @@ elif [ "$1" = "sync" ]; then
     # we check that if corresponds to one entry of the active bridges retrieved from the shop
     for bridge_file_path in "${bridges_dir}"*.conf; do
       bridge_file=$(basename ${bridge_file_path})
-
-      if ! grep -q "${bridge_file}" <<< "${existing_bridges_in_shop}"; then
-        port=${bridge_file//[^0-9]/} # this extracts the numbers from the filename
-        port=${port:1} #removes the first number, which is the 2 in "ip2tor"
-        echo "The bridge in port ${port} does not exists in the Shop. Removing ..."
-        DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" remove "${port}"
+      if [ ! "*.conf" = "${bridge_file}" ]; then
+        if ! grep -q "${bridge_file}" <<< "${existing_bridges_in_shop}"; then
+          port=${bridge_file//[^0-9]/} # this extracts the numbers from the filename
+          port=${port:1} #removes the first number, which is the 2 in "ip2tor"
+          echo "The bridge in port ${port} does not exists in the Shop. Removing ..."
+          DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" remove "${port}"
+        fi
       fi
     done
   fi

@@ -76,7 +76,7 @@ stderr_logfile=/home/ip2tor/logs/supervisor/${program_name}-stderr.log
 user=${service_user}
 EOF
 
-  echo "Update supervisor after adding the service 'ip2tor_${port}'. File created: /home/ip2tor/tor_bridges/ip2tor_${port}.conf"
+  echo "Will now update supervisor after adding the service 'ip2tor_${port}'. File created: /home/ip2tor/tor_bridges/ip2tor_${port}.conf"
   supervisorctl update
 
 }

@@ -18,6 +18,10 @@ RUN apt-get install -y nmap
 RUN useradd ip2tor --comment "IP2Tor Host Account" --create-home --home /home/ip2tor --shell /bin/bash
 RUN chmod 750 /home/ip2tor
 
+RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
+ARG HOST_IP
+RUN sudo ssh-keygen -R ${HOST_IP} && sudo ssh-keyscan -Ht ed25519 ${HOST_IP} >> "/root/.ssh/known_hosts"
+
 RUN mkdir /tmp/ip2tor/
 RUN mkdir /tmp/ip2tor/scripts
 RUN mkdir /tmp/ip2tor/contrib

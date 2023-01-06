@@ -14,8 +14,9 @@ sudo apt-get upgrade -y
 # OpenSSH installation
 sudo apt-get install -y openssh-server 
 sudo apt-get install -y openssh-client
-sudo cp /etc/ssh/sshd_config  /etc/ssh/sshd_config.original_copy
 
+sudo cp /etc/ssh/sshd_config  /etc/ssh/sshd_config.original_copy
+sudo cp ${auth_keys_in_host} ${auth_keys_in_host}.original_copy
 
 if [ ! -f "${auth_keys_in_host}"]; then
     touch ${auth_keys_in_host}
@@ -59,6 +60,9 @@ echo "Installing the firewall and creating the basic config..."
 sudo apt-get install -y ufw
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
+sudo ufw allow ${IP2TOR_HOST_SSH_PORT}
+sudo ufw allow ssh
 sudo ufw allow OpenSSH
+sudo ufw allow 9050
 # sudo ufw enable <<<y
 sudo ufw enable

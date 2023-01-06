@@ -35,20 +35,21 @@ else
 fi
 
 echo "This is your public key:" && cat ${ssh_keys_path}${ssh_keys_file}.pub
+
+
+# This is an alternative if for some reason, when building the docker image, there are problems with the known_hosts
+# echo "ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} -o StrictHostKeyChecking=accept-new 'echo CONNECTED'"
+# connection_check=$(ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} -o StrictHostKeyChecking=accept-new "echo CONNECTED") 
 echo "Trying:"
-echo "ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} 'true'"
+echo "ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} 'echo CONNECTED'"
+connection_check=$(ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} "echo CONNECTED") 
 
-connection_check=$(ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} "true"<<<yes) # First time to add the fingerprint
-connection_check=$(ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} "true")
-echo ${connection_check}
-
-if [ ! 0 = "${connection_check}" ]; then
+if [ ! "CONNECTED" = "${connection_check}" ]; then
     echo "ERROR: Cannnot establish a SSH connection with the host ${server} at port ${port}"
     echo "Did you add the pub key to the authorized_keys file in the host?"
     exit 1
 else
-    echo "SSH authorization could be established successfully. We continue the startup sequence..."
-    exit 0
+    echo "CONNECTED: SSH authorization could be established successfully. We continue the startup sequence..."
 fi
 
 
@@ -67,7 +68,6 @@ fi
 # Run the task scheduler 'cron'
 ################
 service cron start
-
 
 ################
 # Run supervisor

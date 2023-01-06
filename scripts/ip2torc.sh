@@ -10,6 +10,8 @@ set -u
 # How to show debug logs:
 # DEBUG_LOG=1 ./ip2torc.sh
 
+
+
 # command info
 if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "--help" ]; then
   echo "management script to add, check, list or remove IP2Tor bridges (using socat and systemd)"
@@ -21,6 +23,9 @@ if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "--help" ];
   exit 1
 fi
 
+
+# load config
+source "/etc/ip2tor.conf"
 
 ###################
 # DEBUG + CHECKS
@@ -76,8 +81,12 @@ stderr_logfile=/home/ip2tor/logs/supervisor/${program_name}-stderr.log
 user=${service_user}
 EOF
 
-  echo "Will now update supervisor after adding the service 'ip2tor_${port}'. File created: /home/ip2tor/tor_bridges/ip2tor_${port}.conf"
+  echo "Updating supervisor after adding the service 'ip2tor_${port}'. File created: /home/ip2tor/tor_bridges/ip2tor_${port}.conf"
   supervisorctl update
+
+  echo "Opening the port in the host firewall..."
+  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "sudo ufw allow ${port} comment 'Tor Bridge on port ${port}'"
+
 
 }
 
@@ -139,6 +148,9 @@ function remove_bridge() {
     echo "The bridge error logs were moved to the folder 'deleted_bridges'"
     sudo mv ${log_file} /home/ip2tor/logs/supervisor/deleted_bridges/${CURRENTDATE}-${program_name}-stdout.log
   fi
+
+  echo "Blocking access to the port in the host firewall..."
+  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "sudo ufw delete allow ${port}"
   
   echo "successfully stopped and removed bridge."
 

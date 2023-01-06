@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: .docker/Dockerfile
+      args:
+        HOST_IP: ${IP2TOR_HOST_IP}
     container_name: ip2tor-host
     environment:
       CONTAINER_ROLE: "ip2tor-host"

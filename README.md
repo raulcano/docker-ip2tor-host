@@ -6,10 +6,50 @@ The code here includes the structure to deploy an ip2tor host using Docker compo
 Before running the docker container, the Host machine needs to be configured described below.  
 For convenience, the main steps are included in the file ```_host-init.sh```, so if you're ok with it, you can set it to executable and run it (remember you'll still need to configure manually your OpenSSH stuff).
 
+
+# TL;DR
+
+1. Download this repo to your server.
+2. In the ```_host-init.sh``` script, point to the correct absolute location of the ```.env``` file.
+
 ```
+# Change this path to wherever you have the .env file
+source /absolute/path/to/docker-ip2tor-host/.env
+```
+3. Configure the environment variables in ```.env``` (see details below).
+
+4. Run the initiation script:
+```
+cd docker-ip2tor-host/scripts
 sudo chmod u+x _host-init.sh
 . _host-init.sh
 ```
+5. Configure OpenSSH to not allow login via password and to allow login via pub key.
+```
+sudo nano /etc/ssh/sshd_config
+```
+
+Uncomment and edit these lines
+```
+AuthorizedKeysFile      __/absolute/path/to/your__/.ssh/authorized_keys  
+PasswordAuthentication no
+PubkeyAuthentication yes
+```
+
+6. Restart OpenSSH
+```
+sudo /etc/init.d/ssh restart
+```
+7. Add in the ```docker-compose.yml``` file the port range available for bridges (this won't open the ports in the host machine, but will have them internally exposed from docker). Only when a bridge is activated, the port will be open to the outside world.
+
+8. Build and run docker
+```
+cd docker-ip2tor-host
+docker build && docker run
+```
+
+# Configuration
+The following sections provide a bit more detail than the tl;dr. 
 
 ## OpenSSH
 We want to connect the the host via SSH, so it's important to make sure openssh is installed.
@@ -70,14 +110,15 @@ netstat -na | grep :22
 ss -na | grep :22
 ```
 
-By default, we block all incoming traffic
+By default, we block all incoming traffic and allow all outgoing
 ```
 sudo ufw default deny incoming
+sudo ufw default allow outgoing
 ```
 
 Now we allow SSH incoming traffic
 ```
-sudo ufw allow OpenSSH
+sudo ufw allow ssh
 ```
 
 Ensure ```ufw``` is enabled
@@ -115,7 +156,8 @@ The ```.env``` file contains a few variables you'll need to complete for the IP2
 DEBUG_LOG=0
 
 # This can be a clearnet URL or an Onion address of the shop this Host will connect to
-IP2TOR_SHOP_URL=https://ip2tor.fulmo.org
+IP2TOR_SHOP_URL=https://myshop.com
+# IP2TOR_SHOP_URL=masdfasdfasda93393933.onion
 
 # This ID is the one retrieved from the Shop once the Host is created there
 IP2TOR_HOST_ID=58b61c0b-0a00-0b00-0c00-0d0000000000
@@ -126,8 +168,22 @@ IP2TOR_HOST_TOKEN=5eceb05d00000000000000000000000000000000
 # These are necessary for the docker container to connect to the host machine to open/close ports
 # Put your host's public IP here
 IP2TOR_HOST_IP=192.168.0.1
+
 # Only change this if you are using a different port for SSH. Otherwise, just leave this as it is
 IP2TOR_HOST_SSH_PORT=22
+
+# The user we will be login as via SSH. Tested only with the same user that runs docker. Not sure if with different users this will work
+HOST_SSH_USER=myuser
+
+# The path to the authorized_keys file in the Host machine, so we can add the key of the container there. Make sure the file exist!
+SSH_AUTHORIZED_KEYS_PATH_IN_HOST_MACHINE="/home/myuser/.ssh/authorized_keys"
+
+# The absolute path to where we will store the private key of the container, as we access from the Host machine (not from within the running container)
+# This must be the absolute path to the .ssh folder that is included in this git project
+SSH_KEYS_PATH_FOR_CONTAINER="/home/myuser/docker-ip2tor-host/.ssh/"
+
+# The name of the key. No need to change this
+SSH_KEYS_FILE=id_ip2tor_host
 ```
 
 ## Running the container

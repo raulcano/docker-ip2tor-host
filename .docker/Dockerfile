@@ -10,6 +10,8 @@ RUN apt-get install -y supervisor
 RUN apt-get install -y procps
 RUN apt-get install -y lsof
 RUN apt-get install -y nano
+RUN apt-get install -y openssh-client
+RUN apt-get install -y nmap
 
 
 
@@ -22,6 +24,7 @@ RUN mkdir /tmp/ip2tor/contrib
 
 COPY scripts/ip2tor_host.sh /tmp/ip2tor/scripts/ip2tor_host.sh
 COPY scripts/ip2torc.sh /tmp/ip2tor/scripts/ip2torc.sh
+
 
 RUN sudo install -m 0755 -o root -g root -t /usr/local/bin /tmp/ip2tor/scripts/ip2tor_host.sh
 RUN sudo install -m 0755 -o root -g root -t /usr/local/bin /tmp/ip2tor/scripts/ip2torc.sh

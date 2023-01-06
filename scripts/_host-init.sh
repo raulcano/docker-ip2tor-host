@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # This script runs a few initial steps to configure the Host machine (outside docker)
 
+# Change this path to wherever you have the .env file
+source ~/Code/docker-ip2tor-host/.env
+
+auth_keys_in_host=${SSH_AUTHORIZED_KEYS_PATH_IN_HOST_MACHINE}
+ssh_keys_path_for_container=${SSH_KEYS_PATH_FOR_CONTAINER}
+ssh_keys_file=${SSH_KEYS_FILE}
 
 sudo apt-get update -y
 sudo apt-get upgrade -y
@@ -9,13 +15,43 @@ sudo apt-get upgrade -y
 sudo apt-get install -y openssh-server 
 sudo apt-get install -y openssh-client
 sudo cp /etc/ssh/sshd_config  /etc/ssh/sshd_config.original_copy
+
+
+if [ ! -f "${auth_keys_in_host}"]; then
+    touch ${auth_keys_in_host}
+fi
+
+# This needs to be the path to the .ssh folder in the .docker directory
+# When the container runs, it will make use of this private key to connect to the host machine
+
+
+if [ ! -f "${ssh_keys_path_for_container}${ssh_keys_file}" ]; then
+    ssh-keygen -t ed25519 -C "container@ip2tor-host" -f "${ssh_keys_path_for_container}${ssh_keys_file}" -N ''
+    echo "Keys for SSH generated. Now, please add the pub key to the authorized_keys file in the host"
+else
+    echo "Keys for SSH already exist in the .ssh folder. We continue the init sequence..."
+fi
+
+
+echo "Adding the pub key of the container to the authorized_keys of the host machine..."
+cat ${ssh_keys_path_for_container}${ssh_keys_file}.pub | sudo tee --append ${auth_keys_in_host}
+# Remove duplicate lines from that file to ensure we don't add same keys more than once
+sudo awk '!seen[$0]++' ${auth_keys_in_host} | sudo tee  ${auth_keys_in_host}
+
 # Manual config steps needed here
 # ...
-# Once done, restart openssh
+# Allow only login via PubKey
+# Disallow login with Password
+# Point to the correct authorized_keys file
+# ...
+# Restart openssh
 # sudo /etc/init.d/ssh restart
 
 # Firewall basic installation and config
+echo "Installing the firewall and creating the basic config..."
 sudo apt-get install -y ufw
 sudo ufw default deny incoming
+sudo ufw default allow outgoing
 sudo ufw allow OpenSSH
-sudo ufw enable <<<y
+# sudo ufw enable <<<y
+sudo ufw enable

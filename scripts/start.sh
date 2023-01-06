@@ -5,6 +5,52 @@
 # For the moment, I see no need to have the crontab running to check in
 ################
 
+source /home/ip2tor/.env
+
+
+##################
+# 
+# Test that the SSH connection is established with the host machine
+# If cannot connect, we exit
+#
+# ################
+server=${IP2TOR_HOST_IP}            # server IP
+port=${IP2TOR_HOST_SSH_PORT}        # port
+user=${HOST_SSH_USER}
+ssh_keys_path="/home/ip2tor/.ssh/" # This is a mounted volume that corresponds with env variable (need to use the path of the mounted volume though!)
+ssh_keys_file=${SSH_KEYS_FILE}
+
+status=`nmap ${server} -Pn -p ${port} | egrep -io 'open|closed|filtered'`
+if [ $status == "open" ];then
+   echo "SSH Connection to ${server} over port ${port} is possible"
+elif [ $status == "filtered" ]; then
+   echo "SSH Connection to ${server} over port ${port} is possible but blocked by firewall"
+   exit 1
+elif [ $status == "closed" ]; then
+   echo "SSH connection to ${server} over port ${port} is not possible"
+   exit 1
+else
+   echo "Unable to get port ${port} status from ${server}"
+   exit 1
+fi
+
+echo "This is your public key:" && cat ${ssh_keys_path}${ssh_keys_file}.pub
+echo "Trying:"
+echo "ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} 'true'"
+
+connection_check=$(ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} "true"<<<yes) # First time to add the fingerprint
+connection_check=$(ssh -i "${ssh_keys_path}${ssh_keys_file}" ${user}@${server} -p ${port} "true")
+echo ${connection_check}
+
+if [ ! 0 = "${connection_check}" ]; then
+    echo "ERROR: Cannnot establish a SSH connection with the host ${server} at port ${port}"
+    echo "Did you add the pub key to the authorized_keys file in the host?"
+    exit 1
+else
+    echo "SSH authorization could be established successfully. We continue the startup sequence..."
+    exit 0
+fi
+
 
 ################
 # Preparation of scheduled tasks
@@ -26,7 +72,7 @@ service cron start
 ################
 # Run supervisor
 ################
-source /home/ip2tor/.env
+
 supervisord -c /home/ip2tor/contrib/supervisord.conf
 echo 'Starting Tor ...'
 echo "Starting ip2tor_host.sh loop (DEBUG_LOG=$DEBUG_LOG)..."

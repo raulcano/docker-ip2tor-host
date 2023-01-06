@@ -115,7 +115,7 @@ function remove_bridge() {
     echo "file does not exist"
     echo "no bridge on this port..!"
     
-    # If we exit with 1, the loop will still keep calling the API, notice that a bridge is suspended and do nothing in the host, nor update the bridge via API
+    # If we exit with 1, the loop will still keep calling the API, notice that a bridge is suspended and does nothing in the host, nor update the bridge via API
     # So it will call the API again and again.
     # This way, the bridge is set to H and no endless calls to the API are done.
     # exit 1

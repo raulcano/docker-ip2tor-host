@@ -21,9 +21,6 @@ if [ ! -f "${auth_keys_in_host}"]; then
     touch ${auth_keys_in_host}
 fi
 
-# This needs to be the path to the .ssh folder in the .docker directory
-# When the container runs, it will make use of this private key to connect to the host machine
-
 
 if [ ! -f "${ssh_keys_path_for_container}${ssh_keys_file}" ]; then
     ssh-keygen -t ed25519 -C "container@ip2tor-host" -f "${ssh_keys_path_for_container}${ssh_keys_file}" -N ''
@@ -38,14 +35,24 @@ cat ${ssh_keys_path_for_container}${ssh_keys_file}.pub | sudo tee --append ${aut
 # Remove duplicate lines from that file to ensure we don't add same keys more than once
 sudo awk '!seen[$0]++' ${auth_keys_in_host} | sudo tee  ${auth_keys_in_host}
 
-# Manual config steps needed here
-# ...
-# Allow only login via PubKey
-# Disallow login with Password
-# Point to the correct authorized_keys file
-# ...
+
+echo "Configuring SSH: allow login via PubKey, disallow login with password, point to the authorized_keys file..."
+# Allow login via PubKey --> PubkeyAuthentication yes
+# Disallow login with Password --> PasswordAuthentication no
+# Point to the correct authorized_keys file --> AuthorizedKeysFile  ${auth_keys_in_host}
+
+# Comment lines starting with AuthorizedKeysFile, PasswordAuthentication, PubkeyAuthentication
+sudo sed -i.bak 's/^\(AuthorizedKeysFile.*\)/#\1/g' /etc/ssh/sshd_config
+sudo sed -i.bak 's/^\(PasswordAuthentication.*\)/#\1/g' /etc/ssh/sshd_config
+sudo sed -i.bak 's/^\(PubkeyAuthentication.*\)/#\1/g' /etc/ssh/sshd_config
+
+# Append the desired config to the end
+echo "AuthorizedKeysFile  ${auth_keys_in_host}" | sudo tee --append /etc/ssh/sshd_config
+echo "PasswordAuthentication no" | sudo tee --append /etc/ssh/sshd_config
+echo "PubkeyAuthentication yes" | sudo tee --append /etc/ssh/sshd_config
+
 # Restart openssh
-# sudo /etc/init.d/ssh restart
+sudo /etc/init.d/ssh restart
 
 # Firewall basic installation and config
 echo "Installing the firewall and creating the basic config..."

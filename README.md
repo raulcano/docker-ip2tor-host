@@ -24,25 +24,19 @@ cd docker-ip2tor-host/scripts
 sudo chmod u+x _host-init.sh
 . _host-init.sh
 ```
-5. Configure OpenSSH to not allow login via password and to allow login via pub key.
+5. The init script will configure OpenSSH automatically to not allow login via password and to allow login via pub key., as well as pointing to the correct authorized_keys file. If you want to specify extra configuration, edit ```sshd_config``` file and restart OpenSSH.
 ```
 sudo nano /etc/ssh/sshd_config
-```
 
-Uncomment and edit these lines
-```
-AuthorizedKeysFile      __/absolute/path/to/your__/.ssh/authorized_keys  
-PasswordAuthentication no
-PubkeyAuthentication yes
-```
+# edit the file at will, and save it
+# ...
+# restart OpenSSH
 
-6. Restart OpenSSH
-```
 sudo /etc/init.d/ssh restart
 ```
-7. Add in the ```docker-compose.yml``` file the port range available for bridges (this won't open the ports in the host machine, but will have them internally exposed from docker). Only when a bridge is activated, the port will be open to the outside world.
+6. Add in the ```docker-compose.yml``` file the port range available for bridges (this won't open the ports in the host machine, but will have them internally exposed from docker). Only when a bridge is activated, the port will be open to the outside world.
 
-8. Build and run docker
+7. Build and run docker
 ```
 cd docker-ip2tor-host
 docker build && docker run

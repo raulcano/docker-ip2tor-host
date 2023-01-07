@@ -15,7 +15,9 @@
 # Instructions found here: https://stackoverflow.com/questions/3952033/how-can-i-automatically-load-alias-on-startup#3952039
 
 
-# Aliases for the Host(s)
+alias off='sudo shutdown now'
+alias doff='docker-compose down && sudo shutdown now'
+alias restart='sudo reboot now'
 alias hello='docker exec -it ip2tor-host ip2tor_host.sh hello'
 alias activate='docker exec -it ip2tor-host ip2tor_host.sh activate'
 alias checkin='docker exec -it ip2tor-host ip2tor_host.sh checkin 0 "Manual HELLO message"'

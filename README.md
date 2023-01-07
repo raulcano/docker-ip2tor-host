@@ -4,7 +4,7 @@ The code here includes the structure to deploy an ip2tor host using Docker compo
 # Configuration of the Host
 
 Before running the docker container, the Host machine needs to be configured described below.  
-For convenience, the main steps are included in the file ```_host-init.sh```, so if you're ok with it, you can set it to executable and run it (remember you'll still need to configure manually your OpenSSH stuff).
+For convenience, the main steps are included in the file ```_host-init.sh_EDIT_AND_RENAME```, so if you're ok with it, you can set it to executable and run it (remember you'll still need to configure manually your OpenSSH stuff).
 Docker installation is also needed, but it was too tricky to automatize in the same script, so I created a different one ```_host-init-docker.sh```, based on the instructions from here: https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-22-04
 
 
@@ -14,9 +14,12 @@ Docker installation is also needed, but it was too tricky to automatize in the s
 ```
 git clone https://github.com/raulcano/docker-ip2tor-host.git
 ```
-2. In the ```_host-init.sh``` script, point to the correct absolute location of the ```.env``` file.
+2. Copy ```_host-init.sh_EDIT_AND_RENAME``` to ```_host-init.sh```, edit it to point to the correct absolute location of the ```.env``` file.
 
 ```
+# Rename the file
+cp _host-init.sh_EDIT_AND_RENAME _host-init.sh
+
 # Change this path to wherever you have the .env file
 source /absolute/path/to/docker-ip2tor-host/.env
 ```
@@ -28,7 +31,7 @@ cd docker-ip2tor-host/scripts
 sudo chmod u+x _host-init.sh
 . _host-init.sh
 ```
-5. The init script will configure OpenSSH automatically to not allow login via password and to allow login via pub key., as well as pointing to the correct authorized_keys file. If you want to specify extra configuration, edit ```sshd_config``` file and restart OpenSSH.
+5. [optional] The init script will configure OpenSSH automatically to not allow login via password and to allow login via pub key., as well as pointing to the correct authorized_keys file. If you want to specify extra configuration, edit ```sshd_config``` file and restart OpenSSH.
 ```
 sudo nano /etc/ssh/sshd_config
 

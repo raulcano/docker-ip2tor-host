@@ -3,7 +3,7 @@
 
 # Change this path to wherever you have the .env file
 source ~/Code/docker-ip2tor-host/.env
-
+ 
 auth_keys_in_host=${SSH_AUTHORIZED_KEYS_PATH_IN_HOST_MACHINE}
 ssh_keys_path_for_container=${SSH_KEYS_PATH_FOR_CONTAINER}
 ssh_keys_file=${SSH_KEYS_FILE}

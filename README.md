@@ -10,6 +10,9 @@ For convenience, the main steps are included in the file ```_host-init.sh```, so
 # TL;DR
 
 1. Download this repo to your server.
+```
+git clone https://github.com/raulcano/docker-ip2tor-host.git
+```
 2. In the ```_host-init.sh``` script, point to the correct absolute location of the ```.env``` file.
 
 ```
@@ -179,6 +182,51 @@ SSH_KEYS_PATH_FOR_CONTAINER="/home/myuser/docker-ip2tor-host/.ssh/"
 # The name of the key. No need to change this
 SSH_KEYS_FILE=id_ip2tor_host
 ```
+
+## Creating a non-root user and adding keys for SSH
+If you are using a third-party VPS, maybe you get access to it by default with root access.
+While this is convenient, for security reasons I prefer to create a user for managing the Host that is non-root. Let's go through the steps to create one.  
+We assume these steps are done by the ```root``` user:
+
+```
+useradd ip2tor --comment "IP2Tor Service Account" --create-home --home /home/ip2tor --shell /bin/bash
+chmod 750 /home/ip2tor
+
+# change the password
+sudo passwd ip2tor
+
+# add the user to the 'sudo' group
+usermod -aG sudo ip2tor
+```
+
+Also, if you want to avoid being asked for password whenever you use the ```sudo``` command for the new ```ip2tor``` user, youd need to edit the sudoers file as follows:
+
+```
+nano /etc/sudoers
+```
+Add this line at the end and save the file. After this, once you log in with ```ip2tor``` again, you won't be prompted for password every time you do a ```sudo```.
+```
+ip2tor ALL=(ALL) NOPASSWD: ALL
+```
+
+
+Now, to ensure proper SSH connections via public key:
+```
+mkdir /home/ip2tor/.ssh
+touch /home/ip2tor/.ssh/authorized_keys
+nano /home/ip2tor/.ssh/authorized_keys
+```
+Add the public key of the machine you will be connecting from and save ```authorized_keys```
+
+Also, edit ```sshd_config``` file to allow the login via public key:
+```
+sudo nano /etc/ssh/sshd_config
+```
+
+
+From now on, the user is in the system and you should SSH to the server with this one.
+
+
 
 ## Running the container
 Finally, run the docker container of the IP2Tor Host with 

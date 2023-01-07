@@ -226,7 +226,23 @@ sudo nano /etc/ssh/sshd_config
 
 From now on, the user is in the system and you should SSH to the server with this one.
 
+## Add aliases to the Host machine
+This is merely for convenience, but you can add a list of aliases that are loaded on every system start.
 
+Edit the ```~/.bashrc``` file:
+
+
+```
+nano ~/.bashrc
+```
+
+And add these lines at the bottom.
+```
+if [ -f /home/ip2tor/docker-ip2tor-host/scripts/aliases.sh ]; then
+  . /home/ip2tor/docker-ip2tor-host/scripts/aliases.sh
+fi
+```
+Now, save the file and restart the session for ```ip2tor```. You'll see those aliases have been loaded and are ready to use.
 
 ## Running the container
 Finally, run the docker container of the IP2Tor Host with 

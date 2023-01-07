@@ -7,6 +7,7 @@ Before running the docker container, the Host machine needs to be configured des
 For convenience, the main steps are included in the file ```_host-init.sh_EDIT_AND_RENAME```, so if you're ok with it, you can set it to executable and run it (remember you'll still need to configure manually your OpenSSH stuff).
 Docker installation is also needed, but it was too tricky to automatize in the same script, so I created a different one ```_host-init-docker.sh```, based on the instructions from here: https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-22-04
 
+__NOTE:__ These instructions correspond to a host machine running Ubuntu 22.04.1 LTS.
 
 # TL;DR
 
@@ -41,7 +42,8 @@ sudo nano /etc/ssh/sshd_config
 
 sudo /etc/init.d/ssh restart
 ```
-6. Add in the ```docker-compose.yml``` file the port range available for bridges (this won't open the ports in the host machine, but will have them internally exposed from docker). Only when a bridge is activated, the port will be open to the outside world.
+6. Add in the ```docker-compose.yml``` file the port range available for bridges (this won't open the ports in the host machine, but will have them internally exposed from docker). Only when a bridge is activated, the port will be open to the outside world.  
+__IMPORTANT:__ This range needs to be the same than the port range assigned to this host in the Shop!
 
 7. Install docker (see ```_host-init-docker.sh```).
 
@@ -206,7 +208,7 @@ sudo passwd ip2tor
 usermod -aG sudo ip2tor
 ```
 
-Also, if you want to avoid being asked for password whenever you use the ```sudo``` command for the new ```ip2tor``` user, youd need to edit the sudoers file as follows:
+Also, if you want to avoid being asked for password whenever you use the ```sudo``` command for the new ```ip2tor``` user, you need to edit the sudoers file as follows:
 
 ```
 nano /etc/sudoers
@@ -251,10 +253,44 @@ fi
 ```
 Now, save the file and restart the session for ```ip2tor```. You'll see those aliases have been loaded and are ready to use.
 
+At the moment of writing this, the list of aliases is as follows:
+
+```
+alias off='sudo shutdown now'
+alias doff='docker-compose down && sudo shutdown now'
+alias restart='sudo reboot now'
+alias hello='docker exec -it ip2tor-host ip2tor_host.sh hello'
+alias activate='docker exec -it ip2tor-host ip2tor_host.sh activate'
+alias checkin='docker exec -it ip2tor-host ip2tor_host.sh checkin 0 "Manual HELLO message"'
+alias suspend='docker exec -it ip2tor-host ip2tor_host.sh suspend'
+
+alias hd='sudo docker-compose down'
+alias hb='sudo docker-compose build'
+alias hu='sudo docker-compose up'
+alias hdbu='sudo docker-compose down && sudo docker-compose build && sudo docker-compose up'
+
+alias fstatus='sudo ufw status'
+alias status='docker exec -it ip2tor-host supervisorctl status'
+alias sync='docker exec -it ip2tor-host ip2tor_host.sh sync'
+alias log='docker exec -it ip2tor-host cat /home/ip2tor/logs/supervisor/supervisord.log'
+alias logip2tor='docker exec -it ip2tor-host cat /home/ip2tor/logs/supervisor/ip2tor_host-stdout.log'
+alias elogip2tor='docker exec -it ip2tor-host cat /home/ip2tor/logs/supervisor/ip2tor_host-stderr.log'
+alias logtor='docker exec -it ip2tor-host cat /home/ip2tor/logs/supervisor/tor-stdout.log'
+alias elogtor='docker exec -it ip2tor-host cat /home/ip2tor/logs/supervisor/tor-stderr.log'
+
+# Get the stdout logs of a bridge, passing the port number as an argument
+# E.g. "logbridge 21212" will return the contents of the file "ip2tor_bridge_21212-stdout.log"
+# You can replace $1 with $@ if you  want multiple args.
+alias logbridge='f(){ docker exec -it ip2tor-host cat /home/ip2tor/logs/supervisor/ip2tor_bridge_$1-stdout.log; unset -f f; }; f'
+# Get the stdout error logs of a bridge, passing the port number as an argument
+# E.g. "elogbridge 21212" will return the contents of the file "ip2tor_bridge_21212-stderr.log"
+alias elogbridge='f(){ docker exec -it ip2tor-host cat /home/ip2tor/logs/supervisor/ip2tor_bridge_$1-stderr.log; unset -f f; }; f'
+```
+
 ## Running the container
 Finally, run the docker container of the IP2Tor Host with 
 ```
-docker-compose run
+docker-compose build && docker-compose run
 ```
 
 If you configured all previous steps properly, you are now ready to create Tor Bridges via this Host.

@@ -29,6 +29,9 @@ alias hu='sudo docker-compose up'
 alias hdbu='sudo docker-compose down && sudo docker-compose build && sudo docker-compose up'
 
 alias fstatus='sudo ufw status'
+alias fenable='sudo ufw enable'
+alias fdisable='sudo ufw disable'
+
 alias status='docker exec -it ip2tor-host supervisorctl status'
 alias sync='docker exec -it ip2tor-host ip2tor_host.sh sync'
 alias log='docker exec -it ip2tor-host cat /home/ip2tor/logs/supervisor/supervisord.log'

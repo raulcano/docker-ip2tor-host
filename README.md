@@ -5,6 +5,7 @@ The code here includes the structure to deploy an ip2tor host using Docker compo
 
 Before running the docker container, the Host machine needs to be configured described below.  
 For convenience, the main steps are included in the file ```_host-init.sh```, so if you're ok with it, you can set it to executable and run it (remember you'll still need to configure manually your OpenSSH stuff).
+Docker installation is also needed, but it was too tricky to automatize in the same script, so I created a different one ```_host-init-docker.sh```, based on the instructions from here: https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-22-04
 
 
 # TL;DR
@@ -39,10 +40,12 @@ sudo /etc/init.d/ssh restart
 ```
 6. Add in the ```docker-compose.yml``` file the port range available for bridges (this won't open the ports in the host machine, but will have them internally exposed from docker). Only when a bridge is activated, the port will be open to the outside world.
 
-7. Build and run docker
+7. Install docker (see ```_host-init-docker.sh```).
+
+8. Build and run docker
 ```
 cd docker-ip2tor-host
-docker build && docker run
+docker-compose build && docke-compose run
 ```
 
 # Configuration

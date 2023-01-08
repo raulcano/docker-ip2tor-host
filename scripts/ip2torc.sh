@@ -148,7 +148,7 @@ function remove_bridge() {
   fi
 
   if [ -f "${log_file}" ]; then
-    echo "The bridge error logs were moved to the folder 'deleted_bridges'"
+    echo "The bridge stdout logs were moved to the folder 'deleted_bridges'"
     sudo mv ${log_file} /home/ip2tor/logs/supervisor/deleted_bridges/${CURRENTDATE}-${program_name}-stdout.log
   fi
 

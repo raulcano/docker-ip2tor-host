@@ -122,4 +122,8 @@ echo 'Starting Tor ...'
 echo "Starting ip2tor_host.sh loop (DEBUG_LOG=$DEBUG_LOG)..."
 echo 'To check if Tor and the IP2TOR_HOST(s) are running alright, open a terminal in this container and run "supervisorctl status".'
 
+# This two are so 'tail' does not complain it didn't find log files (a problem the first time we run this)
+touch /home/ip2tor/logs/supervisor/empty.log
+touch /home/ip2tor/logs/empty.log
+
 tail -f /home/ip2tor/logs/supervisor/* & tail -f /home/ip2tor/logs/*.log

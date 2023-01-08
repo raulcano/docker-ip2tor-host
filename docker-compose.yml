@@ -19,13 +19,4 @@ services:
         delay: 5s
         max_attempts: 3
         window: 120s
-    # ports:
-    #   - "${RANGE1_START_PORT}-${RANGE1_END_PORT}:${RANGE1_START_PORT}-${RANGE1_END_PORT}"
     network_mode: "host"
-
-    # networks:
-    #   - hostnet
- 
-# networks:
-#     hostnet:
-#         driver: bridge

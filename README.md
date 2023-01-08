@@ -47,8 +47,9 @@ sudo nano /etc/ssh/sshd_config
 
 sudo /etc/init.d/ssh restart
 ```
-6. Add in the ```docker-compose.yml``` file the port range available for bridges (this won't open the ports in the host machine, but will have them internally exposed from docker). Only when a bridge is activated, the port will be open to the outside world.  
-__IMPORTANT:__ This range needs to be the same than the port range assigned to this host in the Shop!
+~~6. Add in the ```docker-compose.yml``` file the port range available for bridges (this won't open the ports in the host machine, but will have them internally exposed from docker). Only when a bridge is activated, the port will be open to the outside world.  
+__IMPORTANT:__ This range needs to be the same than the port range assigned to this host in the Shop!~~  
+_[By using the ```network_mode: "host"``` in the docker-compose.yml file, we don't have to worry anymore about exposing ports from the container. The security of the ports that are exposed to the whole world is controlled by the firewall, which will open or close the corresponding port automatically every time a bridge is opened or closed in that same port.]_
 
 7. Install docker (see ```_host-init-docker.sh```).
 
@@ -140,12 +141,12 @@ sudo ufw enable
 If you are running the IP2Tor Host in a home network, make sure to do a port forwarding in your router. That is, the selected WAN range shall be forwarded to the same LAN range of the machine in your local network that is running the Host (e.g. 192.168.0.100 or something like that).
 
 
-## The docker-compose.yml file
-Decide on a port range you will be offering for Tor Bridges in this host. Let's say, it's the range __21212__ to __21221__.
+## ~~The docker-compose.yml file~~
+~~Decide on a port range you will be offering for Tor Bridges in this host. Let's say, it's the range __21212__ to __21221__.~~ 
 
-Make sure the firewall is not blocking traffic in that range of ports. For example, run ```ufw status``` for a quick view of which rules are enabled (see the "Firewall" section for more details).  
+~~Make sure the firewall is not blocking traffic in that range of ports. For example, run ```ufw status``` for a quick view of which rules are enabled (see the "Firewall" section for more details).  ~~
 
-Edit the ```docker-compose.yml``` file to ensure that the same ports you decided to offer for bridges, are exposed in the container:
+~~Edit the ```docker-compose.yml``` file to ensure that the same ports you decided to offer for bridges, are exposed in the container:~~
 ```
 ip2tor-host:
   ...
@@ -155,6 +156,8 @@ ip2tor-host:
   ...
   ...
 ```
+_[By using the ```network_mode: "host"``` in the docker-compose.yml file, we don't have to worry anymore about exposing ports from the container. The security of the ports that are exposed to the whole world is controlled by the firewall, which will open or close the corresponding port automatically every time a bridge is opened or closed in that same port.]_
+
 ## Host IP
 You need to retrieve the public IP of the Host machine, so it can be added in the Shop. If this is your home network, try a service like https://www.whatismyip.com/ (without being connected to a  VPN!). The IP is the one you'll need to use to create a Host in the Shop.
 

@@ -75,8 +75,9 @@ function add_bridge() {
   fi
 
   cat <<EOF | sudo tee "${file_path}" >/dev/null
+;HOST_ID=${IP2TOR_HOST_ID}
+;IP2Tor Tor Bridge Service (Port ${port})
 [program:${program_name}]
-; IP2Tor Tunnel Service (Port ${port})
 command=/usr/bin/socat TCP4-LISTEN:${port},bind=0.0.0.0,reuseaddr,fork SOCKS4A:localhost:${target},socksport=9050
 stdout_logfile=/home/ip2tor/logs/supervisor/${program_name}-stdout.log
 stderr_logfile=/home/ip2tor/logs/supervisor/${program_name}-stderr.log

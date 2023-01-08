@@ -321,6 +321,7 @@ elif [ "$1" = "sync" ]; then
       bridge_file_path="${bridges_dir}${bridge_file}"
       existing_bridges_in_shop="${bridge_file} ${existing_bridges_in_shop}"
 
+
       # if this bridge does not exist in host, then we create it
       if [ ! -f "${bridge_file_path}" ]; then
         echo "The bridge in port ${port} does not exists in the Host. Creating ..."
@@ -328,16 +329,26 @@ elif [ "$1" = "sync" ]; then
       fi
     done
 
-    # For each .conf file (supervisord programs, one per bridge)
-    # we check that if corresponds to one entry of the active bridges retrieved from the shop
+    # For each .conf file belonging to this host (supervisord programs, one per bridge)
+    # we check that if corresponds to one entry of the active bridges retrieved from the shop 
+
+    
     for bridge_file_path in "${bridges_dir}"*.conf; do
       bridge_file=$(basename ${bridge_file_path})
-      if [ ! "*.conf" = "${bridge_file}" ]; then
-        if ! grep -q "${bridge_file}" <<< "${existing_bridges_in_shop}"; then
-          port=${bridge_file//[^0-9]/} # this extracts the numbers from the filename
-          port=${port:1} #removes the first number, which is the 2 in "ip2tor"
-          echo "The bridge in port ${port} does not exists in the Shop. Removing ..."
-          DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" remove "${port}"
+
+      if [ ! "*.conf" = "${bridge_file}" ]; then # The '*.conf' value is returned if there are not any files, so we skip that one
+        # Need to ignore the conf files that do not belong to this Host, otherwise we will delete the files of the other host
+        # To identify the bridge, the conf file's first line is ';HOST_ID=<host_id_here>'
+        
+        first_line=$(head -n 1 ${bridge_file_path})
+
+        if [ ";HOST_ID=${IP2TOR_HOST_ID}" = "${first_line}" ]; then
+          if ! grep -q "${bridge_file}" <<< "${existing_bridges_in_shop}"; then
+            port=${bridge_file//[^0-9]/} # this extracts the numbers from the filename
+            port=${port:1} #removes the first number, which is the 2 in "ip2tor"
+            echo "The bridge in port ${port} does not exists in the Shop. Removing ..."
+            DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" remove "${port}"
+          fi
         fi
       fi
     done

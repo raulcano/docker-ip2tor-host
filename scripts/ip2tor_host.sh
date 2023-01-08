@@ -56,13 +56,13 @@ fi
 ###################
 # GET CONFIG
 ###################
-# if [ -f "/etc/ip2tor.conf" ]; then
-#   unset IP2TOR_SHOP_URL
-#   unset IP2TOR_HOST_ID
-#   unset IP2TOR_HOST_TOKEN
+if [ -f "/etc/ip2tor.conf" ]; then
+  unset IP2TOR_SHOP_URL
+  # unset IP2TOR_HOST_ID
+  # unset IP2TOR_HOST_TOKEN
 
-#   source "/etc/ip2tor.conf"
-# fi
+  source "/etc/ip2tor.conf"
+fi
 
 if [ -z "${IP2TOR_SHOP_URL}" ] || [ -z "${IP2TOR_HOST_ID}" ] || [ -z "${IP2TOR_HOST_TOKEN}" ]; then
   echo "Error: IP2TOR_SHOP_URL, IP2TOR_HOST_ID and IP2TOR_HOST_TOKEN must be set via environment or config file!"

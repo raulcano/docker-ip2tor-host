@@ -58,9 +58,6 @@ fi
 #
 ################
 
-# Check there are same ids and host ids, otherwise exit
-# ....
-
 while read -d ':' host_id_token; do
    
 
@@ -87,10 +84,10 @@ stderr_logfile=/home/ip2tor/logs/supervisor/${program_name}-stderr.log
 EOF
 
 
-# Add a cronjob to sync this host
-# ...
-
-
+# Add a cronjob to sync this host. This will sync active bridges with the info from shop
+(crontab -l; echo "*/30 * * * * DEBUG_LOG=${DEBUG_LOG} IP2TOR_SHOP_URL=${IP2TOR_SHOP_URL} IP2TOR_HOST_ID=${host_id} IP2TOR_HOST_TOKEN=${host_token} /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | crontab -
+# The same if we want to run it as ip2tor user
+# (runuser -l ip2tor -c 'crontab -l'; echo "*/30 * * * * DEBUG_LOG=${DEBUG_LOG} IP2TOR_SHOP_URL=${IP2TOR_SHOP_URL} IP2TOR_HOST_ID=${host_id} IP2TOR_HOST_TOKEN=${host_token} /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | runuser -l ip2tor -c 'crontab -'
 done <<< "$IP2TOR_HOST_IDS_AND_TOKENS:"
 
 
@@ -101,14 +98,12 @@ done <<< "$IP2TOR_HOST_IDS_AND_TOKENS:"
 
 # A simple task to check visually that cron is running
 # (runuser -l ip2tor -c 'crontab -l'; echo "* * * * * touch /home/ip2tor/logs/cron-alive") | awk '!x[$0]++' | runuser -l ip2tor -c 'crontab -'
-# # Sync active bridges with info from shop
-# (runuser -l ip2tor -c 'crontab -l'; echo "*/30 * * * * /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | runuser -l ip2tor -c 'crontab -'
+
 
 # This would add the crontab to the root user
 # A simple task to check visually that cron is running
 (crontab -l; echo "* * * * * touch /home/ip2tor/logs/cron-alive") | awk '!x[$0]++' | crontab -
-# Sync active bridges with info from shop
-(crontab -l; echo "*/30 * * * * /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | crontab -
+
 
 echo 'This is how the crontab looks like after initializing:'
 crontab -l
@@ -125,6 +120,6 @@ service cron start
 supervisord -c /home/ip2tor/contrib/supervisord.conf
 echo 'Starting Tor ...'
 echo "Starting ip2tor_host.sh loop (DEBUG_LOG=$DEBUG_LOG)..."
-echo 'To check if Tor and the IP2TOR_HOST are running alright, open a terminal in this container and run "supervisorctl status".'
+echo 'To check if Tor and the IP2TOR_HOST(s) are running alright, open a terminal in this container and run "supervisorctl status".'
 
 tail -f /home/ip2tor/logs/supervisor/* & tail -f /home/ip2tor/logs/*.log

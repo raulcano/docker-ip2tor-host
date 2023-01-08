@@ -53,6 +53,48 @@ fi
 
 
 ################
+#
+# Preparation of Host .conf files for supervisord
+#
+################
+
+# Check there are same ids and host ids, otherwise exit
+# ....
+
+while read -d ':' host_id_token; do
+   
+
+   # Need to read the Token id for the ${host_id}
+   arr_host_id_token=(${host_id_token//,/ })
+   host_id=${arr_host_id_token[0]}
+   host_token=${arr_host_id_token[1]}
+
+   echo "Preparing supervisord conf file for Host with ID: ${host_id}"
+
+   program_name="ip2tor_host_${host_id}"
+   file_path="/home/ip2tor/hosts/${program_name}.conf"
+
+   cat <<EOF | sudo tee "${file_path}" >/dev/null
+[program:${program_name}]
+environment = 
+    DEBUG_LOG=${DEBUG_LOG},
+    IP2TOR_SHOP_URL=${IP2TOR_SHOP_URL},
+    IP2TOR_HOST_ID=${host_id},
+    IP2TOR_HOST_TOKEN=${host_token}
+command=/usr/local/bin/ip2tor_host.sh loop
+stdout_logfile=/home/ip2tor/logs/supervisor/${program_name}-stdout.log
+stderr_logfile=/home/ip2tor/logs/supervisor/${program_name}-stderr.log
+EOF
+
+
+# Add a cronjob to sync this host
+# ...
+
+
+done <<< "$IP2TOR_HOST_IDS_AND_TOKENS:"
+
+
+################
 # Preparation of scheduled tasks
 # Inspired from https://www.baeldung.com/linux/create-crontab-script
 ################
@@ -67,6 +109,9 @@ fi
 (crontab -l; echo "* * * * * touch /home/ip2tor/logs/cron-alive") | awk '!x[$0]++' | crontab -
 # Sync active bridges with info from shop
 (crontab -l; echo "*/30 * * * * /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | crontab -
+
+echo 'This is how the crontab looks like after initializing:'
+crontab -l
 
 ################
 # Run the task scheduler 'cron'

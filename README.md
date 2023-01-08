@@ -11,17 +11,22 @@ __NOTE:__ These instructions correspond to a host machine running Ubuntu 22.04.1
 
 # TL;DR
 
-1. Download this repo to your server.
+1. Install git (if not present) and download this repo to your server.
 ```
+sudo apt-get install -y git
 git clone https://github.com/raulcano/docker-ip2tor-host.git
 ```
-2. Copy ```_host-init.sh_EDIT_AND_RENAME``` to ```_host-init.sh```, edit it to point to the correct absolute location of the ```.env``` file.
+2. Copy and rename ```_host-init.sh_EDIT_AND_RENAME``` to ```_host-init.sh```, edit it to point to the correct absolute location of the ```.env``` file.
 
 ```
-# Rename the file
+# Copy and rename the file
 cp _host-init.sh_EDIT_AND_RENAME _host-init.sh
 
-# Change this path to wherever you have the .env file
+# Open editor with _host-init.sh 
+nano _host-init.sh
+
+# Change this line with the path to wherever you have the .env file
+...
 source /absolute/path/to/docker-ip2tor-host/.env
 ```
 3. Configure the environment variables in ```.env``` (see details below).
@@ -190,7 +195,13 @@ SSH_KEYS_PATH_FOR_CONTAINER="/home/myuser/docker-ip2tor-host/.ssh/"
 
 # The name of the key. No need to change this
 SSH_KEYS_FILE=id_ip2tor_host
+
+# First range of ports to open in the host. You can add more later manually in the docker-compose.yml file
+# It seems that docker is not too happy exposing a large amount of ports. I tried manually and noticed that above ca. 400 ports it wouldn't run
+RANGE1_START_PORT=17000
+RANGE1_END_PORT=17400
 ```
+
 
 ## Creating a non-root user and adding keys for SSH
 If you are using a third-party VPS, maybe you get access to it by default with root access.

@@ -20,7 +20,7 @@ services:
         max_attempts: 3
         window: 120s
     ports:
-      - "21212-21221:21212-21221"
+      - "${RANGE1_START_PORT}-${RANGE1_END_PORT}:${RANGE1_START_PORT}-${RANGE1_END_PORT}"
     networks:
       - hostnet
  

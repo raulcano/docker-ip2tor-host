@@ -92,7 +92,7 @@ sudo /etc/init.d/ssh restart
 ```
 
 ## Firewall
-We'll be using ```ufw``` as our firewall, even though other options will be available.
+We'll be using ```ufw``` as our firewall, even though other options are available for you to choose.
 These steps are to ensure that, by default, only the OpenSSH port (22) will be allowed for incoming traffic.
 Once the IP2Tor Host is running, ports will be opened and closed automatically based on the active bridges.
 

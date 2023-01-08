@@ -10,7 +10,6 @@ services:
     container_name: ip2tor-host
     environment:
       CONTAINER_ROLE: "ip2tor-host"
-    hostname: ip2tor-host
     volumes:
       - .:/home/ip2tor
     deploy:

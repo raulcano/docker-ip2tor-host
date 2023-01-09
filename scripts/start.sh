@@ -85,7 +85,7 @@ EOF
 
 
 # Add a cronjob to sync this host. This will sync active bridges with the info from shop
-(crontab -l; echo "* * * * * DEBUG_LOG=${DEBUG_LOG} IP2TOR_SHOP_URL=${IP2TOR_SHOP_URL} IP2TOR_HOST_ID=${host_id} IP2TOR_HOST_TOKEN=${host_token} /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | crontab -
+(crontab -l; echo "*/5 * * * * DEBUG_LOG=${DEBUG_LOG} IP2TOR_SHOP_URL=${IP2TOR_SHOP_URL} IP2TOR_HOST_ID=${host_id} IP2TOR_HOST_TOKEN=${host_token} /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | crontab -
 # The same if we want to run it as ip2tor user
 # (runuser -l ip2tor -c 'crontab -l'; echo "*/30 * * * * DEBUG_LOG=${DEBUG_LOG} IP2TOR_SHOP_URL=${IP2TOR_SHOP_URL} IP2TOR_HOST_ID=${host_id} IP2TOR_HOST_TOKEN=${host_token} /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | runuser -l ip2tor -c 'crontab -'
 done <<< "$IP2TOR_HOST_IDS_AND_TOKENS:"

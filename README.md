@@ -144,7 +144,7 @@ If you are running the IP2Tor Host in a home network, make sure to do a port for
 ## ~~The docker-compose.yml file~~
 ~~Decide on a port range you will be offering for Tor Bridges in this host. Let's say, it's the range __21212__ to __21221__.~~ 
 
-~~Make sure the firewall is not blocking traffic in that range of ports. For example, run ```ufw status``` for a quick view of which rules are enabled (see the "Firewall" section for more details).  ~~
+~~Make sure the firewall is not blocking traffic in that range of ports. For example, run ```ufw status``` for a quick view of which rules are enabled (see the "Firewall" section for more details).~~
 
 ~~Edit the ```docker-compose.yml``` file to ensure that the same ports you decided to offer for bridges, are exposed in the container:~~
 ```

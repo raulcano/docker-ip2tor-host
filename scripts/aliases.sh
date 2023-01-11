@@ -25,8 +25,8 @@ alias suspend='docker exec -it ip2tor-host ip2tor_host.sh suspend'
 
 alias hd='sudo docker-compose down'
 alias hb='sudo docker-compose build'
-alias hu='sudo docker-compose up'
-alias hdbu='sudo docker-compose down && sudo docker-compose build && sudo docker-compose up'
+alias hu='sudo docker-compose up -d && sudo docker-compose logs -f'
+alias hdbu='sudo docker-compose down && sudo docker-compose build && sudo docker-compose up -d && sudo docker-compose logs -f'
 
 alias fstatus='sudo ufw status'
 alias fenable='sudo ufw enable'

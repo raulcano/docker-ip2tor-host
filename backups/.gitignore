@@ -2,5 +2,3 @@
 *
 # Except this file and the supervisor dir
 !.gitignore
-!supervisor
-!cron

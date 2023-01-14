@@ -60,7 +60,6 @@ fi
 
 while read -d ':' host_id_token; do
    
-
    # Need to read the Token id for the ${host_id}
    arr_host_id_token=(${host_id_token//,/ })
    host_id=${arr_host_id_token[0]}
@@ -82,35 +81,15 @@ command=/usr/local/bin/ip2tor_host.sh loop
 stdout_logfile=/home/ip2tor/logs/supervisor/${program_name}-stdout.log
 stderr_logfile=/home/ip2tor/logs/supervisor/${program_name}-stderr.log
 EOF
-
-
-# Add a cronjob to sync this host. This will sync active bridges with the info from shop
-(crontab -l; echo "*/5 * * * * DEBUG_LOG=${DEBUG_LOG} IP2TOR_SHOP_URL=${IP2TOR_SHOP_URL} IP2TOR_HOST_ID=${host_id} IP2TOR_HOST_TOKEN=${host_token} /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | crontab -
-# The same if we want to run it as ip2tor user
-# (runuser -l ip2tor -c 'crontab -l'; echo "*/30 * * * * DEBUG_LOG=${DEBUG_LOG} IP2TOR_SHOP_URL=${IP2TOR_SHOP_URL} IP2TOR_HOST_ID=${host_id} IP2TOR_HOST_TOKEN=${host_token} /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/host_sync.log 2>&1") | awk '!x[$0]++' | runuser -l ip2tor -c 'crontab -'
+   # Add a cronjob to sync this host. This will sync active bridges with the info from shop
+   (crontab -l; echo "*/5 * * * * DEBUG_LOG=${DEBUG_LOG} IP2TOR_SHOP_URL=${IP2TOR_SHOP_URL} IP2TOR_HOST_ID=${host_id} IP2TOR_HOST_TOKEN=${host_token} /usr/local/bin/ip2tor_host.sh sync >> /home/ip2tor/logs/cron/host_sync.log 2>&1") | awk '!x[$0]++' | crontab -
 done <<< "$IP2TOR_HOST_IDS_AND_TOKENS:"
 
 
 ################
-# Preparation of scheduled tasks
-# Inspired from https://www.baeldung.com/linux/create-crontab-script
-################
-
-# A simple task to check visually that cron is running
-# (runuser -l ip2tor -c 'crontab -l'; echo "* * * * * touch /home/ip2tor/logs/cron-alive") | awk '!x[$0]++' | runuser -l ip2tor -c 'crontab -'
-
-
-# This would add the crontab to the root user
-# A simple task to check visually that cron is running
-(crontab -l; echo "* * * * * touch /home/ip2tor/logs/cron-alive") | awk '!x[$0]++' | crontab -
-
-
-echo 'This is how the crontab looks like after initializing:'
-crontab -l
-
-################
 # Run the task scheduler 'cron'
 ################
+echo "Starting cron..."
 service cron start
 
 ################
@@ -124,6 +103,5 @@ echo 'To check if Tor and the IP2TOR_HOST(s) are running alright, open a termina
 
 # This two are so 'tail' does not complain it didn't find log files (a problem the first time we run this)
 touch /home/ip2tor/logs/supervisor/empty.log
-touch /home/ip2tor/logs/empty.log
 
-tail -f /home/ip2tor/logs/supervisor/* & tail -f /home/ip2tor/logs/*.log
+tail -f /home/ip2tor/logs/supervisor/*.log

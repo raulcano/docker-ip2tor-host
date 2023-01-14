@@ -1,0 +1,2 @@
+/home/ip2tor/.vscode
+/home/ip2tor/backups

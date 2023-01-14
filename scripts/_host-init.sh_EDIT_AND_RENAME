@@ -64,6 +64,7 @@ sudo apt-get install -y ufw
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow ${IP2TOR_HOST_SSH_PORT}
+sudo ufw allow ${TOR_PORT}
 sudo ufw allow ssh
 sudo ufw allow OpenSSH
 sudo ufw allow 9050

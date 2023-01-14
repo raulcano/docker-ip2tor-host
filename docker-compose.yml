@@ -17,3 +17,36 @@ services:
         max_attempts: 3
         window: 120s
     network_mode: "host"
+  tos:
+    build:
+      context: .
+      dockerfile: .docker/tos/tos.Dockerfile
+    container_name: ip2tor-host-tos
+    ports:
+      - ${TOS_PORT}:${TOS_PORT}
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    networks:
+      - hostnet
+  cron:
+    build:
+      context: .
+      dockerfile: .docker/cron/cron.Dockerfile
+    container_name: ip2tor-host-cron
+    volumes:
+      - .:/home/ip2tor
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    networks:
+      - hostnet
+networks:
+  hostnet:
+    driver: bridge

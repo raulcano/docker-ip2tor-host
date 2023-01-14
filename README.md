@@ -196,6 +196,9 @@ SSH_KEYS_PATH_FOR_CONTAINER="/home/myuser/docker-ip2tor-host/.ssh/"
 
 # The name of the key. No need to change this
 SSH_KEYS_FILE=id_ip2tor_host
+
+# Port at which the Terms of Service will be exposed (in this IP). Make sure to allow this via the firewall
+TOS_PORT=80
 ```
 
 
@@ -301,3 +304,11 @@ docker-compose build && docker-compose run
 ```
 
 If you configured all previous steps properly, you are now ready to create Tor Bridges via this Host.
+
+## Terms of Service (ToS)
+There is a container that runs a lightweight Python web server with the sole purpose of exposing a Terms of Service page for this host, which you can link when you register the Host in the Shop.
+The file ```.docker/tos/tos.html``` contains the ToS and you can edit it at will with your own terms.  
+Likewise, the environment variable ```TOS_PORT``` defines via which port that page will be served. Make sure that the firewall allows that port:
+```
+sudo ufw allow <YOUR_CHOSEN_TOS_PORT>
+```

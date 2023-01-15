@@ -11,6 +11,8 @@ __NOTE:__ These instructions correspond to a host machine running Ubuntu 22.04.1
 
 # TL;DR
 
+0. [optional] Log in as a non-root user to your system (see below how to add the ```ip2tor``` user).
+
 1. Install git (if not present) and download this repo to your server.
 ```
 sudo apt-get install -y git

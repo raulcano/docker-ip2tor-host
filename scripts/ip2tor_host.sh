@@ -102,11 +102,11 @@ function get_tor_bridges() {
 
   if [ "${status}" = "all" ]; then
     debug "filter: None"
-    local url="${IP2TOR_SHOP_URL}/api/v1/tor_bridges/?host=${IP2TOR_HOST_ID}"
+    local url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/?host=${IP2TOR_HOST_ID}"
 
   else
     debug "filter: ${status}"
-    local url="${IP2TOR_SHOP_URL}/api/v1/tor_bridges/?host=${IP2TOR_HOST_ID}&status=${status}"
+    local url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/?host=${IP2TOR_HOST_ID}&status=${status}"
   fi
 
   res=$(curl -q ${CURL_TOR} -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" "${url}" 2>/dev/null)

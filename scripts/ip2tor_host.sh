@@ -160,7 +160,7 @@ if [ "$1" = "activate" ]; then
     DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" add "${port}" "${target}"
 
     if [ $? -eq 0 ]; then
-      patch_url="${IP2TOR_SHOP_URL}/api/v1/tor_bridges/${b_id}/"
+      patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/${b_id}/"
 
       # now send PATCH to ${patch_url} that ${b_id} is done
       res=$(
@@ -185,7 +185,7 @@ if [ "$1" = "activate" ]; then
 elif [ "$1" = "checkin" ]; then
   ci_status="$2"
   ci_message="$3"
-  url="${IP2TOR_SHOP_URL}/api/v1/hosts/${IP2TOR_HOST_ID}/check_in/"
+  url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/hosts/${IP2TOR_HOST_ID}/check_in/"
 
   res=$(
       curl -q -X "POST" \
@@ -202,7 +202,7 @@ elif [ "$1" = "checkin" ]; then
 # HELLO #
 #########
 elif [ "$1" = "hello" ]; then
-  url="${IP2TOR_SHOP_URL}/api/v1/hosts/${IP2TOR_HOST_ID}/check_in/"
+  url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/hosts/${IP2TOR_HOST_ID}/check_in/"
   res=$(curl -q ${CURL_TOR} -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" "${url}" 2>/dev/null)
   debug "${res}"
 
@@ -267,7 +267,7 @@ elif [ "$1" = "suspend" ]; then
     DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" remove "${port}"
 
     if [ $? -eq 0 ]; then
-      patch_url="${IP2TOR_SHOP_URL}/api/v1/tor_bridges/${b_id}/"
+      patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/${b_id}/"
 
       # now send PATCH to ${patch_url} that ${b_id} is done
       res=$(

@@ -47,6 +47,29 @@ services:
         window: 120s
     networks:
       - hostnet
+  nginx:
+    image: nginx
+    container_name: ip2tor-host-nginx
+    hostname: nginx
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    ports:
+      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}
+      - ${NGINX_HTTPS_PORT}:${NGINX_HTTPS_PORT}
+    volumes:
+      - .docker/nginx:/etc/nginx/templates
+      - ./logs/nginx:/var/log/nginx
+      - ./ssl/${NOSTR_DOMAIN}:/etc/nginx/ssl/${NOSTR_DOMAIN}
+    environment:
+      - NGINX_HTTP_PORT=${NGINX_HTTP_PORT}
+      - NGINX_HTTPS_PORT=${NGINX_HTTPS_PORT}
+      - NOSTR_DOMAIN=${NOSTR_DOMAIN}
+    networks:
+      - hostnet
 networks:
   hostnet:
     driver: bridge

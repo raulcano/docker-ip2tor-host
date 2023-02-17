@@ -16,9 +16,11 @@ set -u
 if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "--help" ]; then
   echo "management script to add, check, list or remove IP2Tor bridges (using socat and systemd)"
   echo "ip2torc.sh add [PORT] [TARGET]"
+  echo "ip2torc.sh add_nostr_alias [PORT] [ALIAS] [PUBLIC_KEY]"
   echo "ip2torc.sh check [TARGET]"
   echo "ip2torc.sh list"
   echo "ip2torc.sh remove [PORT]"
+  echo "ip2torc.sh remove_nostr_alias [ALIAS]"
   echo "ip2torc.sh sync"
   exit 1
 fi
@@ -52,6 +54,19 @@ fi
 ###################
 # FUNCTIONS
 ###################
+function add_nostr_alias(){
+  port=${1}
+  alias=${2}
+  public_key=${3}
+  echo "adding Nostr alias '${alias}' to public key '${public_key}'"
+
+#   To add a line for an alias
+# Location /myalias {redirect 301 nostr:aaaa}
+# Add the line '#alias_marker' to the config file. New aliases will be added before it
+# sudo sed -i '/^    #alias_marker/i \ \ \ \ location\ \/mynewalias\ {return\ 301\ nostr:\/\/npubMYNEWADDRESS}' default.conf.template
+
+}
+
 function add_bridge() {
   # requires sudo
   port=${1}
@@ -115,6 +130,19 @@ function list_bridges() {
 
 }
 
+function remove_nostr_alias() {
+  alias=${1}
+  echo "Removing alias ${alias}"
+
+#   To remove a line that starts with a particular text:
+# sed -i '/^location /
+# myalias /
+# d' filename
+# sudo sed -i '/^    location \/myalias /
+# d' default.conf.template
+
+}
+
 function remove_bridge() {
   # requires sudo
   port=${1}
@@ -169,6 +197,13 @@ if [ "$1" = "add" ]; then
   fi
   add_bridge "${2}" "${3}"
 
+elif [ "$1" = "add_nostr_alias" ]; then
+  if ! [ $# -eq 4 ]; then
+    echo "wrong number of arguments - run with -h for help"
+    exit 1
+  fi
+  add_nostr_alias "${2}" "${3}" "${4}"
+
 #########
 # CHECK #
 #########
@@ -198,6 +233,13 @@ elif [ "$1" = "remove" ]; then
     exit 1
   fi
   remove_bridge "${2}"
+
+elif [ "$1" = "remove_nostr_alias" ]; then
+  if ! [ $# -eq 2 ]; then
+    echo "wrong number of arguments - run with -h for help"
+    exit 1
+  fi
+  remove_nostr_alias "${2}"
 
 else
   echo "unknown command - run with -h for help"

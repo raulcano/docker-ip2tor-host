@@ -101,11 +101,11 @@ function get_tor_bridges() {
   local status=${1-all}
 
   if [ "${status}" = "all" ]; then
-    debug "filter: None"
+    debug "get_tor_bridges filter: None"
     local url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/?host=${IP2TOR_HOST_ID}"
 
   else
-    debug "filter: ${status}"
+    debug "get_tor_bridges filter: ${status}"
     local url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/?host=${IP2TOR_HOST_ID}&status=${status}"
   fi
 
@@ -116,11 +116,42 @@ function get_tor_bridges() {
   #   res=''
   # fi
   if [ -z "${res///}" ]; then
-    debug "Could not reach the shop. Maybe some connection error?"
+    debug "Get Tor Bridges: Could not reach the shop. Maybe some connection error?"
     res=''
     connection_status='NOK'
   elif [ "${res///}" = "[]" ]; then
-    debug "Nothing to do"
+    debug "Get Tor Bridges: Nothing to do"
+    res=''
+    connection_status='OK'
+  fi
+
+}
+
+function get_nostr_aliases() {
+  # first parameter to function
+  local status=${1-all}
+
+  if [ "${status}" = "all" ]; then
+    debug "get_nostr_aliases filter: None"
+    local url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/nostr_aliases/?host=${IP2TOR_HOST_ID}"
+
+  else
+    debug "get_nostr_aliases filter: ${status}"
+    local url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/nostr_aliases/?host=${IP2TOR_HOST_ID}&status=${status}"
+  fi
+
+  res=$(curl -q ${CURL_TOR} -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" "${url}" 2>/dev/null)
+
+  # if [ -z "${res///}" ] || [ "${res///}" = "[]" ]; then
+  #   debug "Nothing to do"
+  #   res=''
+  # fi
+  if [ -z "${res///}" ]; then
+    debug "Get Nostr aliases: Could not reach the shop. Maybe some connection error?"
+    res=''
+    connection_status='NOK'
+  elif [ "${res///}" = "[]" ]; then
+    debug "Get Nostr aliases: Nothing to do"
     res=''
     connection_status='OK'
   fi
@@ -132,52 +163,105 @@ function get_tor_bridges() {
 # ACTIVATE (needs activate) #
 #############################
 if [ "$1" = "activate" ]; then
+
+  # ACTIVATE NOSTR ALIASES
+  get_nostr_aliases "P"  # activate (P was pending) - sets ${res}
+  
+  detail=$(echo "${res}" | jq -c '.detail' &>/dev/null || true)
+  if [ -n "${detail}" ]; then
+    echo "${detail}"
+  else
+
+    jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.alias,.public_key | tostring')
+    active_list=$(echo "${jsn}" | xargs -L4 | sed 's/ /|/g' | paste -sd "\n" -)
+
+    if [ -z "${active_list}" ]; then
+      debug "Activate Nostr Aliases: Nothing to do"
+    else
+    
+      echo "ToDo List:"
+      echo "${active_list}"
+      echo "---"
+
+      for item in ${active_list}; do
+        b_id=$(echo "${item}" | cut -d'|' -f1)
+        port=$(echo "${item}" | cut -d'|' -f2)
+        alias=$(echo "${item}" | cut -d'|' -f3)
+        public_key=$(echo "${item}" | cut -d'|' -f4)
+
+        
+        # Here we add the alias to the nginx config
+        DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" add_nostr_alias "${port}" "${alias}" "${public_key}"
+
+        if [ $? -eq 0 ]; then
+          patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/nostr_aliases/${b_id}/"
+
+          # now send PATCH to ${patch_url} that ${b_id} is done
+          res=$(
+            curl -X "PATCH" \
+            ${CURL_TOR} \
+            -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"status": "A"}' \
+            "${patch_url}" 2>/dev/null
+          )
+
+          debug "Res: ${res}"
+          echo "set to active: ${b_id}"
+        fi
+
+      done
+    fi
+  fi
+
+  # ACTIVATE TOR BRIDGES
   get_tor_bridges "P"  # activate (P was pending) - sets ${res}
 
   detail=$(echo "${res}" | jq -c '.detail' &>/dev/null || true)
   if [ -n "${detail}" ]; then
     echo "${detail}"
-    exit 1
-  fi
+  else
 
-  jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.target | tostring')
-  active_list=$(echo "${jsn}" | xargs -L3 | sed 's/ /|/g' | paste -sd "\n" -)
+    jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.target | tostring')
+    active_list=$(echo "${jsn}" | xargs -L3 | sed 's/ /|/g' | paste -sd "\n" -)
 
-  if [ -z "${active_list}" ]; then
-    debug "Nothing to do"
-    exit 0
-  fi
+    if [ -z "${active_list}" ]; then
+      debug "Activate Tor Bridges: Nothing to do"
+    else
 
-  echo "ToDo List:"
-  echo "${active_list}"
-  echo "---"
+      echo "ToDo List:"
+      echo "${active_list}"
+      echo "---"
 
-  for item in ${active_list}; do
-    b_id=$(echo "${item}" | cut -d'|' -f1)
-    port=$(echo "${item}" | cut -d'|' -f2)
-    target=$(echo "${item}" | cut -d'|' -f3)
+      for item in ${active_list}; do
+        b_id=$(echo "${item}" | cut -d'|' -f1)
+        port=$(echo "${item}" | cut -d'|' -f2)
+        target=$(echo "${item}" | cut -d'|' -f3)
 
-    DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" add "${port}" "${target}"
+        DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" add "${port}" "${target}"
 
-    if [ $? -eq 0 ]; then
-      patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/${b_id}/"
+        if [ $? -eq 0 ]; then
+          patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/${b_id}/"
 
-      # now send PATCH to ${patch_url} that ${b_id} is done
-      res=$(
-        curl -X "PATCH" \
-        ${CURL_TOR} \
-        -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" \
-        -H "Content-Type: application/json" \
-        --data '{"status": "A"}' \
-        "${patch_url}" 2>/dev/null
-      )
+          # now send PATCH to ${patch_url} that ${b_id} is done
+          res=$(
+            curl -X "PATCH" \
+            ${CURL_TOR} \
+            -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"status": "A"}' \
+            "${patch_url}" 2>/dev/null
+          )
 
-      debug "Res: ${res}"
-      echo "set to active: ${b_id}"
+          debug "Res: ${res}"
+          echo "set to active: ${b_id}"
+        fi
+
+      done
     fi
+  fi
 
-  done
-
+  
 
 ############
 # CHECK-IN #
@@ -239,51 +323,102 @@ elif [ "$1" = "loop" ]; then
 # NEEDS_SUSPEND #
 #################
 elif [ "$1" = "suspend" ]; then
+
+  # SUSPEND TOR BRIDGES
   get_tor_bridges "S"  # S for (needs) suspend - update to "H" (suspended/hold) - sets ${res}
 
   detail=$(echo "${res}" | jq -c '.detail' &>/dev/null || true)
   if [ -n "${detail}" ]; then
     echo "${detail}"
-    exit 1
-  fi
+  else
 
-  jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.target | tostring')
-  suspend_list=$(echo "${jsn}" | xargs -L3 | sed 's/ /|/g' | paste -sd "\n" -)
+    jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.target | tostring')
+    suspend_list=$(echo "${jsn}" | xargs -L3 | sed 's/ /|/g' | paste -sd "\n" -)
 
-  if [ -z "${suspend_list}" ]; then
-    # echo "DEBUG: Nothing to do"
-    exit 0
-  fi
+    if [ -z "${suspend_list}" ]; then
+      debug "Suspend Tor Bridges: Nothing to do"
+    else
 
-  echo "ToDo List:"
-  echo "${suspend_list}"
-  echo "---"
+      echo "ToDo List:"
+      echo "${suspend_list}"
+      echo "---"
 
-  for item in ${suspend_list}; do
-    b_id=$(echo "${item}" | cut -d'|' -f1)
-    port=$(echo "${item}" | cut -d'|' -f2)
-    target=$(echo "${item}" | cut -d'|' -f3)
+      for item in ${suspend_list}; do
+        b_id=$(echo "${item}" | cut -d'|' -f1)
+        port=$(echo "${item}" | cut -d'|' -f2)
+        target=$(echo "${item}" | cut -d'|' -f3)
 
-    DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" remove "${port}"
+        DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" remove "${port}"
 
-    if [ $? -eq 0 ]; then
-      patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/${b_id}/"
+        if [ $? -eq 0 ]; then
+          patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/${b_id}/"
 
-      # now send PATCH to ${patch_url} that ${b_id} is done
-      res=$(
-        curl -X "PATCH" \
-        ${CURL_TOR} \
-        -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" \
-        -H "Content-Type: application/json" \
-        --data '{"status": "H"}' \
-        "${patch_url}" 2>/dev/null
-      )
+          # now send PATCH to ${patch_url} that ${b_id} is done
+          res=$(
+            curl -X "PATCH" \
+            ${CURL_TOR} \
+            -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"status": "H"}' \
+            "${patch_url}" 2>/dev/null
+          )
 
-      debug "Res: ${res}"
-      echo "set to suspended (hold): ${b_id}"
+          debug "Res: ${res}"
+          echo "set to suspended (hold): ${b_id}"
+        fi
+
+      done
     fi
+  fi
 
-  done
+  # SUSPEND NOSTR ALIASES
+
+  get_nostr_aliases "S"  # S for (needs) suspend - update to "H" (suspended/hold) - sets ${res}
+
+  detail=$(echo "${res}" | jq -c '.detail' &>/dev/null || true)
+  if [ -n "${detail}" ]; then
+    echo "${detail}"
+  else
+
+    jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.alias,.public_key | tostring')
+    suspend_list=$(echo "${jsn}" | xargs -L4 | sed 's/ /|/g' | paste -sd "\n" -)
+
+    if [ -z "${suspend_list}" ]; then
+      debug "Suspend Nostr Aliases: Nothing to do"
+    else
+
+      echo "ToDo List:"
+      echo "${suspend_list}"
+      echo "---"
+
+      for item in ${suspend_list}; do
+        b_id=$(echo "${item}" | cut -d'|' -f1)
+        port=$(echo "${item}" | cut -d'|' -f2)
+        alias=$(echo "${item}" | cut -d'|' -f3)
+        public_key=$(echo "${item}" | cut -d'|' -f4)
+
+        DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" remove_nostr_alias "${alias}"
+
+        if [ $? -eq 0 ]; then
+          patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/nostr_aliases/${b_id}/"
+
+          # now send PATCH to ${patch_url} that ${b_id} is done
+          res=$(
+            curl -X "PATCH" \
+            ${CURL_TOR} \
+            -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"status": "H"}' \
+            "${patch_url}" 2>/dev/null
+          )
+
+          debug "Res: ${res}"
+          echo "set to suspended (hold): ${b_id}"
+        fi
+
+      done
+    fi
+  fi
 
 ###############################
 # SYNC_BRIDGES #

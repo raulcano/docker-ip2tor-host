@@ -39,12 +39,6 @@ server {
     ssl_certificate /etc/nginx/ssl/${NOSTR_DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/${NOSTR_DOMAIN}/privkey.pem;
 
-    ##
-    # Logging Settings
-    ##
-    error_log  stderr warn;
-    access_log  /dev/stdout main;
-
 
     location / {
         try_files $uri @proxy_to_app;

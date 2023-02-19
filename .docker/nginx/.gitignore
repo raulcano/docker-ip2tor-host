@@ -1,3 +1,4 @@
 *
 !.gitignore
 !default.conf.template_prod
+!default.conf.template_dev

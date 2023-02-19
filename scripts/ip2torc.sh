@@ -58,14 +58,63 @@ function add_nostr_alias(){
   port=${1}
   alias=${2}
   public_key=${3}
-  echo "adding Nostr alias '${alias}' to public key '${public_key}'"
+  echo "Adding Nostr alias '${alias}' to public key '${public_key}'"
 
-#   To add a line for an alias
-# Location /myalias {redirect 301 nostr:aaaa}
-# Add the line '#alias_marker' to the config file. New aliases will be added before it
-# sudo sed -i '/^    #alias_marker/i \ \ \ \ location\ \/mynewalias\ {return\ 301\ nostr:\/\/npubMYNEWADDRESS}' default.conf.template
+  # To add a line for an alias of the form
+  # location /myalias {redirect 301 nostr://npub0dafs2328adfasd;}
+
+  # Modify the conf file that is loaded when the container is (re)started - this doesn't apply changes immediately, but it's necessary for whtn the container is rebooted
+  # add alias of the form mydomain.com/alias
+  sudo sed -i "/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}" /home/ip2tor/.docker/nginx/default.conf.template
+
+  # add alias of the form alias.mydomain.com
+  file_path="/home/ip2tor/.docker/nginx/nostr_alias_${alias}.conf.template"
+
+  cat <<EOF | sudo tee "${file_path}" >/dev/null
+server {
+    listen ${NGINX_HTTP_PORT};
+    server_name ${alias}.${NOSTR_DOMAIN};
+   
+    location / {
+        return 301 nostr://${public_key};
+    }
+}
+EOF
+
+
+  cmd_nginx="cd /home/ip2tor/docker-ip2tor-host && docker-compose restart nginx"
+  echo "Restarting nginx..."
+  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "${cmd_nginx}"
 
 }
+
+function remove_nostr_alias() {
+  alias=${1}
+  echo "Removing alias ${alias}"
+
+  # To remove a line that starts with a particular text:
+  # sed -i '/^location/myalias/d' filename
+  sudo sed -i "/^    location \/${alias} /d" /home/ip2tor/.docker/nginx/default.conf.template
+
+  # remove alias of the form alias.mydomain.com
+  file_path="/home/ip2tor/.docker/nginx/nostr_alias_${alias}.conf.template"
+
+  if ! [ -f "${file_path}" ]; then
+    echo "Alias subdomain file for '${alias}.${NOSTR_DOMAIN}' does not exist"
+    echo "no alias on this subdomain..!"
+    
+  else 
+    sudo rm -f ${file_path}
+  fi
+
+  
+  # Restart nginx container
+  echo "will now restart nginx, so the alias is properly removed"
+  cmd_nginx="cd /home/ip2tor/docker-ip2tor-host && docker-compose restart nginx"
+  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "${cmd_nginx}"
+
+}
+
 
 function add_bridge() {
   # requires sudo
@@ -130,18 +179,6 @@ function list_bridges() {
 
 }
 
-function remove_nostr_alias() {
-  alias=${1}
-  echo "Removing alias ${alias}"
-
-#   To remove a line that starts with a particular text:
-# sed -i '/^location /
-# myalias /
-# d' filename
-# sudo sed -i '/^    location \/myalias /
-# d' default.conf.template
-
-}
 
 function remove_bridge() {
   # requires sudo

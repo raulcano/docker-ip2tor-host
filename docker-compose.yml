@@ -65,9 +65,11 @@ services:
       - ./logs/nginx:/var/log/nginx
       - ./ssl/${NOSTR_DOMAIN}:/etc/nginx/ssl/${NOSTR_DOMAIN}
     environment:
+      - HTTP_SERVER_PORT=${HTTP_SERVER_PORT}
       - NGINX_HTTP_PORT=${NGINX_HTTP_PORT}
       - NGINX_HTTPS_PORT=${NGINX_HTTPS_PORT}
       - NOSTR_DOMAIN=${NOSTR_DOMAIN}
+      - NOSTR_SHOP_URL=${NOSTR_SHOP_URL}
     networks:
       - hostnet
 networks:

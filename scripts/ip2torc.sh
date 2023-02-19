@@ -75,6 +75,15 @@ server {
     listen ${NGINX_HTTP_PORT};
     server_name ${alias}.${NOSTR_DOMAIN};
    
+    ##
+    # Logging Settings
+    ##
+    error_log  stderr warn;
+    access_log  /dev/stdout main;
+
+    ##
+    # Here goes the redirect to the nostr public key
+    ##
     location / {
         return 301 nostr://${public_key};
     }

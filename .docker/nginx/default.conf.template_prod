@@ -48,7 +48,7 @@ server {
     # Here goes the landing page
     ##
     location @proxy_to_app {
-       return 301 https://${NOSTR_SHOP_URL};
+       return 301 https://${NOSTR_SHOP_URL}/#nostr_aliases;
     }
 
 }

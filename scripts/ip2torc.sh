@@ -54,12 +54,23 @@ fi
 ###################
 # FUNCTIONS
 ###################
+
+function reload_nginx() {
+  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "docker exec ip2tor-host-nginx service nginx reload"
+}
+
+function run_command_on_host_machine(){
+  command=${1}
+  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "${command}"
+}
+
 function add_nostr_alias(){
   port=${1}
   alias=${2}
   public_key=${3}
   echo "Adding Nostr alias '${alias}' to public key '${public_key}'"
 
+  echo "Writing new config in nginx templates..."
   # To add a line for an alias of the form
   # location /myalias {redirect 301 nostr://npub0dafs2328adfasd;}
 
@@ -89,12 +100,15 @@ server {
     }
 }
 EOF
-
-
-  cmd_nginx="cd /home/ip2tor/docker-ip2tor-host && docker-compose restart nginx"
-  echo "Restarting nginx..."
-  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "${cmd_nginx}"
-
+  # we cannot simply copy the default.conf.template into the default.conf because the .template has env variables that are replaced when the docker image is built
+  cmd_template_default_conf="docker exec ip2tor-host-nginx sed -i \"/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}\" /etc/nginx/conf.d/default.conf"
+  cmd_template_subdomain_conf="docker exec ip2tor-host-nginx cp /etc/nginx/templates/nostr_alias_${alias}.conf.template /etc/nginx/conf.d/nostr_alias_${alias}.conf"
+  
+  echo "Writing new config in nginx container..."
+  run_command_on_host_machine "${cmd_template_default_conf}"
+  run_command_on_host_machine "${cmd_template_subdomain_conf}"
+  
+  reload_nginx
 }
 
 function remove_nostr_alias() {
@@ -116,12 +130,13 @@ function remove_nostr_alias() {
     sudo rm -f ${file_path}
   fi
 
-  
-  # Restart nginx container
-  echo "will now restart nginx, so the alias is properly removed"
-  cmd_nginx="cd /home/ip2tor/docker-ip2tor-host && docker-compose restart nginx"
-  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "${cmd_nginx}"
+  cmd_template_default_conf="docker exec ip2tor-host-nginx sed -i \"/^    location \/${alias} /d\" /etc/nginx/conf.d/default.conf"
+  cmd_template_subdomain_conf="docker exec ip2tor-host-nginx rm /etc/nginx/conf.d/nostr_alias_${alias}.conf"
 
+  run_command_on_host_machine "${cmd_template_default_conf}"
+  run_command_on_host_machine "${cmd_template_subdomain_conf}"
+
+  reload_nginx
 }
 
 

@@ -164,55 +164,7 @@ function get_nostr_aliases() {
 #############################
 if [ "$1" = "activate" ]; then
 
-  # ACTIVATE NOSTR ALIASES
-  get_nostr_aliases "P"  # activate (P was pending) - sets ${res}
   
-  detail=$(echo "${res}" | jq -c '.detail' &>/dev/null || true)
-  if [ -n "${detail}" ]; then
-    echo "${detail}"
-  else
-
-    jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.alias,.public_key | tostring')
-    active_list=$(echo "${jsn}" | xargs -L4 | sed 's/ /|/g' | paste -sd "\n" -)
-
-    if [ -z "${active_list}" ]; then
-      debug "Activate Nostr Aliases: Nothing to do"
-    else
-    
-      echo "ToDo List:"
-      echo "${active_list}"
-      echo "---"
-
-      for item in ${active_list}; do
-        b_id=$(echo "${item}" | cut -d'|' -f1)
-        port=$(echo "${item}" | cut -d'|' -f2)
-        alias=$(echo "${item}" | cut -d'|' -f3)
-        public_key=$(echo "${item}" | cut -d'|' -f4)
-
-        
-        # Here we add the alias to the nginx config
-        DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" add_nostr_alias "${port}" "${alias}" "${public_key}"
-
-        if [ $? -eq 0 ]; then
-          patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/nostr_aliases/${b_id}/"
-
-          # now send PATCH to ${patch_url} that ${b_id} is done
-          res=$(
-            curl -X "PATCH" \
-            ${CURL_TOR} \
-            -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data '{"status": "A"}' \
-            "${patch_url}" 2>/dev/null
-          )
-
-          debug "Res: ${res}"
-          echo "set to active: ${b_id}"
-        fi
-
-      done
-    fi
-  fi
 
   # ACTIVATE TOR BRIDGES
   get_tor_bridges "P"  # activate (P was pending) - sets ${res}
@@ -261,7 +213,55 @@ if [ "$1" = "activate" ]; then
     fi
   fi
 
+  # ACTIVATE NOSTR ALIASES
+  get_nostr_aliases "P"  # activate (P was pending) - sets ${res}
   
+  detail=$(echo "${res}" | jq -c '.detail' &>/dev/null || true)
+  if [ -n "${detail}" ]; then
+    echo "${detail}"
+  else
+
+    jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.alias,.public_key | tostring')
+    active_list=$(echo "${jsn}" | xargs -L4 | sed 's/ /|/g' | paste -sd "\n" -)
+
+    if [ -z "${active_list}" ]; then
+      debug "Activate Nostr Aliases: Nothing to do"
+    else
+    
+      echo "ToDo List:"
+      echo "${active_list}"
+      echo "---"
+
+      for item in ${active_list}; do
+        b_id=$(echo "${item}" | cut -d'|' -f1)
+        port=$(echo "${item}" | cut -d'|' -f2)
+        alias=$(echo "${item}" | cut -d'|' -f3)
+        public_key=$(echo "${item}" | cut -d'|' -f4)
+
+        
+        # Here we add the alias to the nginx config
+        DEBUG_LOG=$DEBUG_LOG "${IP2TORC_CMD}" add_nostr_alias "${port}" "${alias}" "${public_key}"
+
+        if [ $? -eq 0 ]; then
+          patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/nostr_aliases/${b_id}/"
+
+          # now send PATCH to ${patch_url} that ${b_id} is done
+          res=$(
+            curl -X "PATCH" \
+            ${CURL_TOR} \
+            -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"status": "A"}' \
+            "${patch_url}" 2>/dev/null
+          )
+
+          debug "Res: ${res}"
+          echo "set to active: ${b_id}"
+        fi
+
+      done
+    fi
+  fi  
 
 ############
 # CHECK-IN #

@@ -16,9 +16,11 @@ set -u
 if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "--help" ]; then
   echo "management script to add, check, list or remove IP2Tor bridges (using socat and systemd)"
   echo "ip2torc.sh add [PORT] [TARGET]"
+  echo "ip2torc.sh add_nostr_alias [PORT] [ALIAS] [PUBLIC_KEY]"
   echo "ip2torc.sh check [TARGET]"
   echo "ip2torc.sh list"
   echo "ip2torc.sh remove [PORT]"
+  echo "ip2torc.sh remove_nostr_alias [ALIAS]"
   echo "ip2torc.sh sync"
   exit 1
 fi
@@ -52,6 +54,92 @@ fi
 ###################
 # FUNCTIONS
 ###################
+
+function reload_nginx() {
+  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "docker exec ip2tor-host-nginx service nginx reload"
+}
+
+function run_command_on_host_machine(){
+  command=${1}
+  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "${command}"
+}
+
+function add_nostr_alias(){
+  port=${1}
+  alias=${2}
+  public_key=${3}
+  echo "Adding Nostr alias '${alias}' to public key '${public_key}'"
+
+  echo "Writing new config in nginx templates..."
+  # To add a line for an alias of the form
+  # location /myalias {redirect 301 nostr://npub0dafs2328adfasd;}
+
+  # Modify the conf file that is loaded when the container is (re)started - this doesn't apply changes immediately, but it's necessary for whtn the container is rebooted
+  # add alias of the form mydomain.com/alias
+  sudo sed -i "/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}" /home/ip2tor/.docker/nginx/default.conf.template
+
+  # add alias of the form alias.mydomain.com
+  file_path="/home/ip2tor/.docker/nginx/nostr_alias_${alias}.conf.template"
+
+  cat <<EOF | sudo tee "${file_path}" >/dev/null
+server {
+    listen ${NGINX_HTTP_PORT};
+    server_name ${alias}.${NOSTR_DOMAIN};
+   
+    ##
+    # Logging Settings
+    ##
+    error_log  stderr warn;
+    access_log  /dev/stdout main;
+
+    ##
+    # Here goes the redirect to the nostr public key
+    ##
+    location / {
+        return 301 nostr://${public_key};
+    }
+}
+EOF
+  # we cannot simply copy the default.conf.template into the default.conf because the .template has env variables that are replaced when the docker image is built
+  cmd_template_default_conf="docker exec ip2tor-host-nginx sed -i \"/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}\" /etc/nginx/conf.d/default.conf"
+  cmd_template_subdomain_conf="docker exec ip2tor-host-nginx cp /etc/nginx/templates/nostr_alias_${alias}.conf.template /etc/nginx/conf.d/nostr_alias_${alias}.conf"
+  
+  echo "Writing new config in nginx container..."
+  run_command_on_host_machine "${cmd_template_default_conf}"
+  run_command_on_host_machine "${cmd_template_subdomain_conf}"
+  
+  reload_nginx
+}
+
+function remove_nostr_alias() {
+  alias=${1}
+  echo "Removing alias ${alias}"
+
+  # To remove a line that starts with a particular text:
+  # sed -i '/^location/myalias/d' filename
+  sudo sed -i "/^    location \/${alias} /d" /home/ip2tor/.docker/nginx/default.conf.template
+
+  # remove alias of the form alias.mydomain.com
+  file_path="/home/ip2tor/.docker/nginx/nostr_alias_${alias}.conf.template"
+
+  if ! [ -f "${file_path}" ]; then
+    echo "Alias subdomain file for '${alias}.${NOSTR_DOMAIN}' does not exist"
+    echo "no alias on this subdomain..!"
+    
+  else 
+    sudo rm -f ${file_path}
+  fi
+
+  cmd_template_default_conf="docker exec ip2tor-host-nginx sed -i \"/^    location \/${alias} /d\" /etc/nginx/conf.d/default.conf"
+  cmd_template_subdomain_conf="docker exec ip2tor-host-nginx rm /etc/nginx/conf.d/nostr_alias_${alias}.conf"
+
+  run_command_on_host_machine "${cmd_template_default_conf}"
+  run_command_on_host_machine "${cmd_template_subdomain_conf}"
+
+  reload_nginx
+}
+
+
 function add_bridge() {
   # requires sudo
   port=${1}
@@ -115,6 +203,7 @@ function list_bridges() {
 
 }
 
+
 function remove_bridge() {
   # requires sudo
   port=${1}
@@ -169,6 +258,13 @@ if [ "$1" = "add" ]; then
   fi
   add_bridge "${2}" "${3}"
 
+elif [ "$1" = "add_nostr_alias" ]; then
+  if ! [ $# -eq 4 ]; then
+    echo "wrong number of arguments - run with -h for help"
+    exit 1
+  fi
+  add_nostr_alias "${2}" "${3}" "${4}"
+
 #########
 # CHECK #
 #########
@@ -198,6 +294,13 @@ elif [ "$1" = "remove" ]; then
     exit 1
   fi
   remove_bridge "${2}"
+
+elif [ "$1" = "remove_nostr_alias" ]; then
+  if ! [ $# -eq 2 ]; then
+    echo "wrong number of arguments - run with -h for help"
+    exit 1
+  fi
+  remove_nostr_alias "${2}"
 
 else
   echo "unknown command - run with -h for help"

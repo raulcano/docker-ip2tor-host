@@ -56,7 +56,7 @@ fi
 ###################
 
 function reload_nginx() {
-  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "docker exec ip2tor-host-nginx service nginx reload"
+  ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "sudo docker exec ip2tor-host-nginx service nginx reload"
 }
 
 function run_command_on_host_machine(){
@@ -101,8 +101,8 @@ server {
 }
 EOF
   # we cannot simply copy the default.conf.template into the default.conf because the .template has env variables that are replaced when the docker image is built
-  cmd_template_default_conf="docker exec ip2tor-host-nginx sed -i \"/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}\" /etc/nginx/conf.d/default.conf"
-  cmd_template_subdomain_conf="docker exec ip2tor-host-nginx cp /etc/nginx/templates/nostr_alias_${alias}.conf.template /etc/nginx/conf.d/nostr_alias_${alias}.conf"
+  cmd_template_default_conf="sudo docker exec ip2tor-host-nginx sed -i \"/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}\" /etc/nginx/conf.d/default.conf"
+  cmd_template_subdomain_conf="sudo docker exec ip2tor-host-nginx cp /etc/nginx/templates/nostr_alias_${alias}.conf.template /etc/nginx/conf.d/nostr_alias_${alias}.conf"
   
   echo "Writing new config in nginx container..."
   run_command_on_host_machine "${cmd_template_default_conf}"
@@ -130,8 +130,8 @@ function remove_nostr_alias() {
     sudo rm -f ${file_path}
   fi
 
-  cmd_template_default_conf="docker exec ip2tor-host-nginx sed -i \"/^    location \/${alias} /d\" /etc/nginx/conf.d/default.conf"
-  cmd_template_subdomain_conf="docker exec ip2tor-host-nginx rm /etc/nginx/conf.d/nostr_alias_${alias}.conf"
+  cmd_template_default_conf="sudo docker exec ip2tor-host-nginx sed -i \"/^    location \/${alias} /d\" /etc/nginx/conf.d/default.conf"
+  cmd_template_subdomain_conf="sudo docker exec ip2tor-host-nginx rm /etc/nginx/conf.d/nostr_alias_${alias}.conf"
 
   run_command_on_host_machine "${cmd_template_default_conf}"
   run_command_on_host_machine "${cmd_template_subdomain_conf}"

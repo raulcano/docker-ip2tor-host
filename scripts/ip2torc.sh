@@ -90,7 +90,7 @@ server {
     # Here goes the redirect to the HTTPS
     ##
     location / {
-        return 301 https://$host$request_uri;
+        return 301 https://\$host\$request_uri;
     }
 }
 server {

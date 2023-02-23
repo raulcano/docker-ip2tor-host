@@ -85,12 +85,33 @@ function add_nostr_alias(){
 server {
     listen ${NGINX_HTTP_PORT};
     server_name ${alias}.${NOSTR_DOMAIN};
-   
+
+    ##
+    # Here goes the redirect to the HTTPS
+    ##
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+server {
+    listen ${NGINX_HTTPS_PORT} ssl;
+    server_name ${alias}.${NOSTR_DOMAIN};
+
     ##
     # Logging Settings
     ##
     error_log  stderr warn;
     access_log  /dev/stdout main;
+
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers "EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA256:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EDH+aRSA+AESGCM:EDH+aRSA+SHA256:EDH+aRSA:EECDH:!aNULL:!eNULL:!MEDIUM:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4:!SEED";
+
+    add_header Strict-Transport-Security "max-age=31536000";
+
+    ssl_certificate /etc/nginx/ssl/${NOSTR_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/${NOSTR_DOMAIN}/privkey.pem;
+
 
     ##
     # Here goes the redirect to the nostr public key

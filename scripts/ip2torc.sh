@@ -77,6 +77,7 @@ function add_nostr_alias(){
   # Modify the conf file that is loaded when the container is (re)started - this doesn't apply changes immediately, but it's necessary for whtn the container is rebooted
   # add alias of the form mydomain.com/alias
   sudo sed -i "/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}" /home/ip2tor/.docker/nginx/default.conf.template
+  sudo sed -i "/^        #nip05_marker/i \ \ \ \ \ \ \ \ if\ (\$arg_name\ =\ \"${alias}\"){return\ 200\ '{\"names\":{\"${alias}\":\"${public_key}\"}}';}" /home/ip2tor/.docker/nginx/default.conf.template
 
   # add alias of the form alias.mydomain.com
   file_path="/home/ip2tor/.docker/nginx/nostr_alias_${alias}.conf.template"
@@ -123,10 +124,12 @@ server {
 EOF
   # we cannot simply copy the default.conf.template into the default.conf because the .template has env variables that are replaced when the docker image is built
   cmd_template_default_conf="sudo docker exec ip2tor-host-nginx sed -i \"/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}\" /etc/nginx/conf.d/default.conf"
+  cmd_template_default_conf2="sudo docker exec ip2tor-host-nginx sed -i \"/^        #nip05_marker/i \ \ \ \ \ \ \ \ if\ (\\\$arg_name\ =\ \\\"${alias}\\\"){return\ 200\ '{\\\"names\\\":{\\\"${alias}\\\":\\\"${public_key}\\\"}}';}\" /etc/nginx/conf.d/default.conf"
   cmd_template_subdomain_conf="sudo docker exec ip2tor-host-nginx cp /etc/nginx/templates/nostr_alias_${alias}.conf.template /etc/nginx/conf.d/nostr_alias_${alias}.conf"
   
   echo "Writing new config in nginx container..."
   run_command_on_host_machine "${cmd_template_default_conf}"
+  run_command_on_host_machine "${cmd_template_default_conf2}"
   run_command_on_host_machine "${cmd_template_subdomain_conf}"
   
   reload_nginx
@@ -139,6 +142,7 @@ function remove_nostr_alias() {
   # To remove a line that starts with a particular text:
   # sed -i '/^location/myalias/d' filename
   sudo sed -i "/^    location \/${alias} /d" /home/ip2tor/.docker/nginx/default.conf.template
+  sudo sed -i "/arg_name = \"${alias}\"/d" /home/ip2tor/.docker/nginx/default.conf.template
 
   # remove alias of the form alias.mydomain.com
   file_path="/home/ip2tor/.docker/nginx/nostr_alias_${alias}.conf.template"
@@ -152,9 +156,11 @@ function remove_nostr_alias() {
   fi
 
   cmd_template_default_conf="sudo docker exec ip2tor-host-nginx sed -i \"/^    location \/${alias} /d\" /etc/nginx/conf.d/default.conf"
+  cmd_template_default_conf2="sudo docker exec ip2tor-host-nginx sed -i \"/arg_name = \\\"${alias}\\\"/d\" /etc/nginx/conf.d/default.conf"
   cmd_template_subdomain_conf="sudo docker exec ip2tor-host-nginx rm /etc/nginx/conf.d/nostr_alias_${alias}.conf"
 
   run_command_on_host_machine "${cmd_template_default_conf}"
+  run_command_on_host_machine "${cmd_template_default_conf2}"
   run_command_on_host_machine "${cmd_template_subdomain_conf}"
 
   reload_nginx

@@ -1,3 +1,3 @@
 .env
 scripts/_host-init.sh
-scripts/test.sh
+scripts/test*

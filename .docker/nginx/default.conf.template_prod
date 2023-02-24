@@ -23,13 +23,6 @@ server {
     error_log  stderr warn;
     access_log  /dev/stdout main;
 
-    ##
-    # Aliases
-    # One line per alias, which will be added or removed automatically
-    # Do not delete the '#alias_marker', since it's necessary to add new aliases automatically 
-    ##
-    #alias_marker
-
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
     ssl_prefer_server_ciphers on;
     ssl_ciphers "EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA256:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EDH+aRSA+AESGCM:EDH+aRSA+SHA256:EDH+aRSA:EECDH:!aNULL:!eNULL:!MEDIUM:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4:!SEED";
@@ -39,6 +32,22 @@ server {
     ssl_certificate /etc/nginx/ssl/${NOSTR_DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/${NOSTR_DOMAIN}/privkey.pem;
 
+    ##
+    # Nostr aliases
+    # One line per alias, which will be added or removed automatically
+    # Do not delete the '#alias_marker', since it's necessary to add new aliases automatically 
+    ##
+    #alias_marker
+    
+    ##
+    # NIP-05 
+    # https://github.com/nostr-protocol/nips/blob/master/05.md
+    # One line per redirect
+    # IMPORTANT! Do not delete the '#nip05_marker', since it's necessary to add new redirects automatically
+    location /.well-known/nostr.json {
+        #nip05_marker
+        return 301 https://${NOSTR_SHOP_URL}/#nostr_aliases;
+    }
 
     location / {
         try_files $uri @proxy_to_app;

@@ -46,7 +46,7 @@ server {
     # IMPORTANT! Do not delete the '#nip05_marker', since it's necessary to add new redirects automatically
     location /.well-known/nostr.json {
         #nip05_marker
-        return 301 https://${NOSTR_SHOP_URL}/#nostr_aliases;
+        return 200 '{ "error" : "There is no NIP05 entry for alias <$arg_name>"}';
     }
 
     location / {

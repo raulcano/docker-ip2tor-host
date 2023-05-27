@@ -316,7 +316,7 @@ elif [ "$1" = "loop" ]; then
     "${0}" activate
     "${0}" suspend
     "${0}" hello
-    sleep 20
+    sleep 30
   done
 
 #################

@@ -357,3 +357,12 @@ example.com   "ec-256"   *.example.com  ZeroSSL.com  2023-05-29T10:57:24Z  2023-
 ```
 
 5. To uninstall the script, run ```acme.sh --uninstall```
+
+
+## Removing logs periodically
+In order to avoid ever growing log files, we can add the necessary cronjobs for deleting such files.
+E.g.
+```
+25 15 * * mon sudo rm /home/ip2tor/docker-ip2tor-host/logs/cron/host_sync.log
+```
+

@@ -314,3 +314,46 @@ Likewise, the environment variable ```TOS_PORT``` defines via which port that pa
 ```
 sudo ufw allow <YOUR_CHOSEN_TOS_PORT>
 ```
+
+
+## Using Acme.sh script for SSL certs
+
+https://github.com/acmesh-official/acme.sh
+
+1. Install from git in the home directory
+```
+cd ~
+git clone https://github.com/acmesh-official/acme.sh.git
+cd ./acme.sh
+./acme.sh --install -m my@example.com
+```
+
+2. Issue the certificates.  While there are many ways to issue and renew your certs, I found the usage of API to be the most convenient:
+https://github.com/acmesh-official/acme.sh/wiki/dnsapi . For example, if your domains are in Namesilo.com:
+```
+export Namesilo_Key="yourAPIkey"
+./acme.sh --issue --dns dns_namesilo --dnssleep 900 -d ${NOSTR_DOMAIN}  -d '*.${NOSTR_DOMAIN}'
+```
+
+3. Create the destination folder for the certs. This is the folder that NGINX will check for the files.
+```
+mkdir ~/docker-ip2tor-host/ssl/${NOSTR_DOMAIN}/
+```
+3. Copy the issued certs to the destination folderwith this specific command provided by the acme script.
+```
+acme.sh --install-cert -d {NOSTR_DOMAIN} -d *.{NOSTR_DOMAIN} \
+--key-file       ~/docker-ip2tor-host/ssl/${NOSTR_DOMAIN}/privkey.pem  \
+--fullchain-file ~/docker-ip2tor-host/ssl/${NOSTR_DOMAIN}/fullchain.pem \
+--reloadcmd     "sudo docker exec ip2tor-host-nginx service nginx reload"
+```
+4. To check the installed certificates and their validity:
+```
+acme.sh --list
+```
+You will get a list like this:
+```
+Main_Domain  KeyLength  SAN_Domains   CA           Created               Renew
+example.com   "ec-256"   *.example.com  ZeroSSL.com  2023-05-29T10:57:24Z  2023-07-27T10:57:24Z
+```
+
+5. To uninstall the script, run ```acme.sh --uninstall```

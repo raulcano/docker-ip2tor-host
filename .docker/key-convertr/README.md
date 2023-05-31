@@ -1,3 +1,7 @@
+# License note
+The contents within this folder have been copied and included in this package with permission from the author.  
+The original repository is here: https://github.com/rot13maxi/key-convertr
+
 # Key-Convertr
 People are copy-pasting nostr private keys into webpages to convert between the original hex-encoding and bech32-encoding (specified in [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)).
 

@@ -49,3 +49,6 @@ alias logbridge='f(){ sudo docker exec -it ip2tor-host cat /home/ip2tor/logs/sup
 # E.g. "elogbridge 21212" will return the contents of the file "ip2tor_bridge_21212-stderr.log"
 alias elogbridge='f(){ sudo docker exec -it ip2tor-host cat /home/ip2tor/logs/supervisor/ip2tor_bridge_$1-stderr.log; unset -f f; }; f'
 alias sizes='sudo find . -type f -exec du -Sh {} + | sort -rh | head -n 20'
+
+# rebuild the container 'ip2tor-host' only
+alias rehost='sudo docker-compose up -d --no-deps --build ip2tor-host && sudo docker-compose logs -f'

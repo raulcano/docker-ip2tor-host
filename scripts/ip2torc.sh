@@ -55,6 +55,13 @@ fi
 # FUNCTIONS
 ###################
 
+function convert_public_key_to_hex(){
+  command_key_convert="sudo docker exec ip2tor-host-key-convertr key-convertr --to-hex ${1}"
+  result=$(run_command_on_host_machine "${command_key_convert}")
+  echo "${result}"
+}
+
+
 function reload_nginx() {
   ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "sudo docker exec ip2tor-host-nginx service nginx reload"
 }
@@ -68,6 +75,7 @@ function add_nostr_alias(){
   port=${1}
   alias=${2}
   public_key=${3}
+  public_key_hex=$(convert_public_key_to_hex ${public_key})
   echo "Adding Nostr alias '${alias}' to public key '${public_key}'"
 
   echo "Writing new config in nginx templates..."
@@ -77,7 +85,8 @@ function add_nostr_alias(){
   # Modify the conf file that is loaded when the container is (re)started - this doesn't apply changes immediately, but it's necessary for whtn the container is rebooted
   # add alias of the form mydomain.com/alias
   sudo sed -i "/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}" /home/ip2tor/.docker/nginx/default.conf.template
-  sudo sed -i "/^        #nip05_marker/i \ \ \ \ \ \ \ \ if\ (\$arg_name\ =\ \"${alias}\"){return\ 200\ '{\"names\":{\"${alias}\":\"${public_key}\"}}';}" /home/ip2tor/.docker/nginx/default.conf.template
+  # sudo sed -i "/^        #nip05_marker/i \ \ \ \ \ \ \ \ if\ (\$arg_name\ =\ \"${alias}\"){return\ 200\ '{\"names\":{\"${alias}\":\"${public_key}\"}}';}" /home/ip2tor/.docker/nginx/default.conf.template
+  sudo sed -i "/^        #nip05_marker/i \ \ \ \ \ \ \ \ if\ (\$arg_name\ =\ \"${alias}\"){return\ 200\ '{\"names\":{\"${alias}\":\"${public_key_hex}\"}}';}" /home/ip2tor/.docker/nginx/default.conf.template
 
   # add alias of the form alias.mydomain.com
   file_path="/home/ip2tor/.docker/nginx/nostr_alias_${alias}.conf.template"
@@ -138,7 +147,8 @@ server {
 EOF
   # we cannot simply copy the default.conf.template into the default.conf because the .template has env variables that are replaced when the docker image is built
   cmd_template_default_conf="sudo docker exec ip2tor-host-nginx sed -i \"/^    #alias_marker/i \ \ \ \ location\ \/${alias}\ {return\ 301\ nostr:\/\/${public_key};}\" /etc/nginx/conf.d/default.conf"
-  cmd_template_default_conf2="sudo docker exec ip2tor-host-nginx sed -i \"/^        #nip05_marker/i \ \ \ \ \ \ \ \ if\ (\\\$arg_name\ =\ \\\"${alias}\\\"){return\ 200\ '{\\\"names\\\":{\\\"${alias}\\\":\\\"${public_key}\\\"}}';}\" /etc/nginx/conf.d/default.conf"
+  # cmd_template_default_conf2="sudo docker exec ip2tor-host-nginx sed -i \"/^        #nip05_marker/i \ \ \ \ \ \ \ \ if\ (\\\$arg_name\ =\ \\\"${alias}\\\"){return\ 200\ '{\\\"names\\\":{\\\"${alias}\\\":\\\"${public_key}\\\"}}';}\" /etc/nginx/conf.d/default.conf"
+  cmd_template_default_conf2="sudo docker exec ip2tor-host-nginx sed -i \"/^        #nip05_marker/i \ \ \ \ \ \ \ \ if\ (\\\$arg_name\ =\ \\\"${alias}\\\"){return\ 200\ '{\\\"names\\\":{\\\"${alias}\\\":\\\"${public_key_hex}\\\"}}';}\" /etc/nginx/conf.d/default.conf"
   cmd_template_subdomain_conf="sudo docker exec ip2tor-host-nginx cp /etc/nginx/templates/nostr_alias_${alias}.conf.template /etc/nginx/conf.d/nostr_alias_${alias}.conf"
   
   echo "Writing new config in nginx container..."

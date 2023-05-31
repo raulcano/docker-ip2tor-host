@@ -72,6 +72,14 @@ services:
       - NOSTR_SHOP_URL=${NOSTR_SHOP_URL}
     networks:
       - hostnet
+  key-convertr:
+    build:
+      context: .
+      dockerfile: .docker/key-convertr/docker/Dockerfile
+    container_name: ip2tor-host-key-convertr
+    restart: on-failure
+    networks:
+      - hostnet
 networks:
   hostnet:
     driver: bridge

@@ -11,7 +11,8 @@ __NOTE:__ These instructions correspond to a host machine running Ubuntu 22.04.1
 
 # TL;DR
 
-0. [optional] Log in as a non-root user to your system (see below how to add the ```ip2tor``` user).
+0. [optional] Log in as a non-root user to your system (see below how to add the ```ip2tor``` user).  
+__IMPORTANT__: If we are using a non-root user, we need to add it to the sudoers list so we won't get prompted for password. If we don't do this, bridges are not properly created (they use some functions with sudo). See below how to add the user to the sudoers list.
 
 1. Install git (if not present) and download this repo to your server.
 ```

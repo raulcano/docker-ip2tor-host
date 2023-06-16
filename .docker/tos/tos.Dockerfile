@@ -5,8 +5,8 @@ RUN apt-get update -y
 RUN apt-get install -y sudo
 RUN apt-get install -y python3
 RUN apt-get install -y pip
-
-RUN python3 -m pip install python-dotenv
+RUN apt-get install -y python3-dotenv
+# RUN python3 -m pip install python-dotenv
 
 COPY .env /usr/share/.env
 COPY .docker/tos/serve-page.py /usr/share/serve-page.py

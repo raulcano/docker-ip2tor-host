@@ -36,6 +36,8 @@ services:
     build:
       context: .
       dockerfile: .docker/cron/cron.Dockerfile
+      args:
+        HOST_IP: ${IP2TOR_HOST_IP}
     container_name: ip2tor-host-cron
     volumes:
       - .:/home/ip2tor
@@ -80,6 +82,46 @@ services:
     restart: on-failure
     networks:
       - hostnet
+  
+  ##################################################
+  # BANDWIDTH MONITORING SERVICES
+  ##################################################
+  telegraf:
+    image: telegraf:1.27
+    container_name: ip2tor-host-telegraf
+    hostname: telegraf
+    volumes:
+      - .docker/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - .:/home/ip2tor
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+    depends_on:
+      - influxdb
+    network_mode: "host"
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: ip2tor-host-influxdb
+    hostname: influxdb
+    volumes:
+      - .docker/influxdbv2:/var/lib/influxdb2:rw
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${DOCKER_INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_RETENTION=${DOCKER_INFLUXDB_INIT_RETENTION}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+    ports:
+      - "8086:8086"
 networks:
   hostnet:
     driver: bridge

@@ -6,6 +6,15 @@
 ################
 source /home/ip2tor/.env
 
+################
+# Ensure the needed scripts are executable
+################
+chmod +x /home/ip2tor/scripts/iptables_bytes.sh
+chmod +x /home/ip2tor/scripts/backup-files.sh
+chmod +x /home/ip2tor/scripts/delete-old-backup.sh
+chmod +x /home/ip2tor/scripts/ip2tor_host.sh
+chmod +x /home/ip2tor/scripts/ip2torc.sh
+chmod +x /home/ip2tor/scripts/aliases.sh
 
 ##################
 # 

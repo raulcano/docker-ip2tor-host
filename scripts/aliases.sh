@@ -52,3 +52,5 @@ alias sizes='sudo find . -type f -exec du -Sh {} + | sort -rh | head -n 20'
 
 # rebuild the container 'ip2tor-host' only
 alias rehost='sudo docker-compose up -d --no-deps --build ip2tor-host && sudo docker-compose logs -f'
+# rebuild the container 'ip2tor-host-telegraf' only
+alias retelegraf='sudo docker-compose up -d --no-deps --build telegraf && sudo docker-compose logs -f'

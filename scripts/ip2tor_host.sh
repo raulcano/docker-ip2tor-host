@@ -24,6 +24,7 @@
 if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "--help" ]; then
   echo "management script to fetch and process config from shop"
   echo "ip2tor_host.sh activate"
+  echo "ip2tor_host.sh bandwidth"
   echo "ip2tor_host.sh checkin NUMBER \"MESSAGE\""
   echo "ip2tor_host.sh hello"
   echo "ip2tor_host.sh list [I|P|A|S|H|Z|D|F]"
@@ -96,6 +97,7 @@ IP2TORC_CMD=/usr/local/bin/ip2torc.sh
 ###################
 # FUNCTIONS
 ###################
+
 function get_tor_bridges() {
   # first parameter to function
   local status=${1-all}
@@ -155,16 +157,12 @@ function get_nostr_aliases() {
     res=''
     connection_status='OK'
   fi
-
 }
-
 
 #############################
 # ACTIVATE (needs activate) #
 #############################
 if [ "$1" = "activate" ]; then
-
-  
 
   # ACTIVATE TOR BRIDGES
   get_tor_bridges "P"  # activate (P was pending) - sets ${res}
@@ -263,6 +261,68 @@ if [ "$1" = "activate" ]; then
     fi
   fi  
 
+
+
+
+############
+# BANDWIDTH
+# - check usage of bandwidth on Active bridges
+# - consume from their allocated bandwidth (this endpoint substracts and updates the bandwidth_last_checked date)
+############
+elif [ "$1" = "bandwidth" ]; then
+  
+  # GET ACTIVE BRIDGES
+  get_tor_bridges "A"  # A for active - sets ${res}
+
+  detail=$(echo "${res}" | jq -c '.detail' &>/dev/null || true)
+  if [ -n "${detail}" ]; then
+    echo "${detail}"
+  else
+
+    jsn=$(echo "${res}" | jq -c '.[]|.id,.port,.bandwidth_last_checked | tostring')
+    active_list=$(echo "${jsn}" | xargs -L3 | sed 's/ /|/g' | paste -sd "\n" -)
+
+    if [ -z "${active_list}" ]; then
+      debug "Consume Bandwidth on Tor Bridges: Nothing to do"
+    else
+
+      echo "ToDo List - Consume Bandwith for:"
+      echo "${active_list}"
+      echo "---"
+
+      for item in ${active_list}; do
+        b_id=$(echo "${item}" | cut -d'|' -f1)
+        port=$(echo "${item}" | cut -d'|' -f2)
+        bandwidth_last_checked=$(echo "${item}" | cut -d'|' -f3)
+        
+        # Get the start and end date to check for bandwidth used
+        
+        # This is the last time the bridge bandwidth was updated ('bandwidth_last_checked' variable)
+        start_date=${bandwidth_last_checked}
+        # Current time (now)
+        end_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        # Get the bytes consumed by the bridge in the period defined
+        bytes_consumed=$("${IP2TORC_CMD}" get_bytes_consumed "${port}" "${start_date}" "${end_date}")
+        
+        if [ $? -eq 0 ] && [ ${bytes_consumed} -gt 0 ]; then
+          patch_url="${IP2TOR_SHOP_URL}:${IP2TOR_SHOP_PORT}/api/v1/tor_bridges/${b_id}/consume_bandwidth/"
+
+          res=$(
+            curl -X "PATCH" \
+              ${CURL_TOR} \
+              -H "Authorization: Token ${IP2TOR_HOST_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{\"amount\": \"${bytes_consumed}\"}" \
+              "${patch_url}" 2>/dev/null
+          )
+
+          debug "Res: ${res}"
+        fi
+
+      done
+    fi
+  fi
+
 ############
 # CHECK-IN #
 ############
@@ -314,9 +374,13 @@ elif [ "$1" = "loop" ]; then
   while :
   do
     "${0}" activate
+    sleep 10
     "${0}" suspend
+    sleep 2
     "${0}" hello
-    sleep 30
+    sleep 10
+    "${0}" bandwidth
+    sleep 10
   done
 
 #################

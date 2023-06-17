@@ -18,6 +18,7 @@ if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "--help" ];
   echo "ip2torc.sh add [PORT] [TARGET]"
   echo "ip2torc.sh add_nostr_alias [PORT] [ALIAS] [PUBLIC_KEY]"
   echo "ip2torc.sh check [TARGET]"
+  echo "ip2torc.sh get_bytes_consumed [PORT] [START_DATE] [END_DATE]"
   echo "ip2torc.sh list"
   echo "ip2torc.sh remove [PORT]"
   echo "ip2torc.sh remove_nostr_alias [ALIAS]"
@@ -61,6 +62,18 @@ function convert_public_key_to_hex(){
   echo "${result}"
 }
 
+function get_bytes_consumed(){
+  echo "5"
+  # local port=$1
+  # local start_date=$2
+  # local end_date=$3
+
+  # local query="SELECT SUM(bytes_consumed) FROM iptables WHERE port='$port' AND time >= '$start_date' AND time <= '$end_date'"
+
+  # local result=$(influx -database 'telegraf' -execute "$query" -format 'csv' | tail -n 1 | awk -F',' '{print $3}')
+  
+  # echo "$result"
+}
 
 function reload_nginx() {
   ssh -i "/home/ip2tor/.ssh/${SSH_KEYS_FILE}" ${HOST_SSH_USER}@${IP2TOR_HOST_IP} -p ${IP2TOR_HOST_SSH_PORT} "sudo docker exec ip2tor-host-nginx service nginx reload"
@@ -325,6 +338,16 @@ elif [ "$1" = "check" ]; then
     exit 1
   fi
   check_bridge_target "${2}"
+
+######################
+# GET BYTES CONSUMED #
+######################
+elif [ "$1" = "get_bytes_consumed" ]; then
+  if ! [ $# -eq 4 ]; then
+    echo "wrong number of arguments - run with -h for help"
+    exit 1
+  fi
+  get_bytes_consumed "${2}" "${3}" "${4}"
 
 ########
 # LIST #

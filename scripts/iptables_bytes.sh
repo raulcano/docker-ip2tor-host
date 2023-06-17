@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This script returns the bytes consumed via a port, using iptables information.
+# One needs to take into account that iptables offer always a cumulative amount
+
 # Get the port parameter
 port="$1"
 iptables_file="/home/ip2tor/.docker/telegraf/iptables.txt"

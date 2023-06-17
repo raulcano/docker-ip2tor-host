@@ -367,3 +367,38 @@ E.g.
 25 15 * * mon sudo rm /home/ip2tor/docker-ip2tor-host/logs/cron/host_sync.log
 ```
 
+## Monitoring the usage of bandwith for each Tor Bridge (port level monitoring)
+There is no easy way to monitor bytes consumed in a specific port. Most tools I researched offered monitoring capabilities at interface level, but didn't breakdown the detail of ports.
+
+We need to collect data from iptables, that is, the bytes consumed per each port and store that in a file. What we do is, from the ```cron``` container, a periodic job stores the results from the corresponding iptable in file ```.docker/telegraf/iptables.txt```.  
+
+Next, we run a ```telegraf``` container, configured with input plugins created per each port. Each  input plugin relates to a single port (or Tor Bridge) and it is a command that reads from the file ```iptables.txt```, extracts the info in the corresponding format for InfluxDB. An output Telegraf plugin makes sure to send such information to InfluxDB (in the ```influxdb``` container).
+Each input plugin is doing that same thing every few seconds, injecting the information to the ```influxdb```, which stores them.
+
+### Setting a new Tor Bridge
+Every time a new Tor Bridge is set to ACTIVE, the file ```.docker/telegraf/telegraf.conf``` needs to be updated with the input plugin for the port of that Tor Bridge. This would look like this example:
+```
+##START_TOR_BRIDGE_21059
+[[inputs.exec]]
+  commands = ["./home/ip2tor/scripts/iptables_bytes.sh 21059"]
+  timeout = "120s"
+  data_format = "influx"
+##END_TOR_BRIDGE_21059
+```
+
+The script ```iptables_bytes.sh``` takes one parameter (a port), reads from the ```iptables.txt``` file and returns the information in a format usable by ```influxdb```. The previous plugin would return something like this (the value of ```bytes_consumed``` would usually be different every time, depending on the usage, of course):
+```
+iptables,port=21059 bytes_consumed=13433
+```
+### Removing an existing Tor Bridge
+If a Tor Bridge has expired and is not renewed, it will be transitioned to SUSPENDED. Also, if a Tor Bridge runs out of allocated bandwith (usage exceeds its quota), the bridge is transitioned to OUT_OF_BANDWIDTH.  
+When either of the previous happens, the ```telegraf.conf``` file needs to be updated by removing the corresponding plugin that captures the bandwidth of that port.
+
+### Get bandwidth consumption by port between dates
+To access the bytes consumed by a particular port between two dates, we need to query the influx db with three parameters:
+- port
+- start_date
+- end_date
+
+__IMPORTANT__: Since iptables shows a cumulative consumption in bytes, we need to substract the value at start_date from the value at end_date
+With this , we get the consumption in bytes in the period for the port specified.

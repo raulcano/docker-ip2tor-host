@@ -394,7 +394,7 @@ iptables,port=21059 bytes_consumed=13433
 If a Tor Bridge has expired and is not renewed, it will be transitioned to SUSPENDED. Also, if a Tor Bridge runs out of allocated bandwith (usage exceeds its quota), the bridge is transitioned to OUT_OF_BANDWIDTH.  
 When either of the previous happens, the ```telegraf.conf``` file needs to be updated by removing the corresponding plugin that captures the bandwidth of that port.
 
-### Get bandwidth consumption by port between dates
+### Getting bandwidth consumption by port between dates
 To access the bytes consumed by a particular port between two dates, we need to query the influx db with three parameters:
 - port
 - start_date
